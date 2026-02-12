@@ -143,8 +143,10 @@ function fieldTag(label,filled){
 }
 
 // ═══════ GENERATOR ═══════
+let _prevConvention="";
 function renderGenerator(){
   const {convention:cid}=state;const conv=CONVENTIONS.find(c=>c.id===cid)||null;
+  const _convChanged=cid!==_prevConvention;_prevConvention=cid;
   const frag=document.createDocumentFragment();
 
   // Convention dropdown
@@ -213,7 +215,7 @@ function renderGenerator(){
 
   // Fields section
   const fields=h("div",{style:{padding:"16px 24px 20px",borderTop:"1px solid #edf0f4"}});
-  const inner=h("div",{className:"fade-in"});
+  const inner=h("div",_convChanged?{className:"fade-in"}:{});
 
   // Info card
   if(conv.info){
