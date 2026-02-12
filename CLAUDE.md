@@ -39,7 +39,11 @@ The file is organized into clearly marked sections:
 - **Abbreviations**: `applyAbbreviations()` replaces full words with short forms (longest-first matching), strips special characters, and converts to PascalCase.
 - **Separators**: Underscore `_` is the default segment separator; hyphen `-` is used for component-based conventions (FDOT production deliverables).
 
-## How to Run
+## Deployment
+
+The app is hosted on GitHub Pages, served directly from the `main` branch root. Since there is no build step, GitHub Pages serves `index.html` and `mi4-tool.js` as-is. Push to `main` to deploy.
+
+## How to Run Locally
 
 Serve the static files with any HTTP server:
 
