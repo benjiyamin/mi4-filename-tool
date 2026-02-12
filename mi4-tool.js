@@ -119,7 +119,7 @@ function autocompleteEl(label,hint,value,onChange,placeholder,suggestions){
   const filtered=q?suggestions.filter(s=>s.toLowerCase().includes(q)).slice(0,8):suggestions.slice(0,8);
   const inp=h("input",{className:"inp",type:"text",value,placeholder:placeholder||"",autocomplete:"off",
     onInput:e=>onChange(e.target.value),
-    onFocus:()=>{if(!state.acFocused)setState({acFocused:true,acHighlightIdx:-1})},
+    onFocus:()=>{if(!_restoring&&!state.acFocused)setState({acFocused:true,acHighlightIdx:-1})},
     onBlur:()=>{if(!_restoring)setTimeout(()=>{if(state.acFocused)setState({acFocused:false,acHighlightIdx:-1})},150)},
     onKeydown:e=>{if(!state.acFocused||!filtered.length)return;if(e.key==="ArrowDown"){e.preventDefault();setState({acHighlightIdx:Math.min(state.acHighlightIdx+1,filtered.length-1)})}else if(e.key==="ArrowUp"){e.preventDefault();setState({acHighlightIdx:Math.max(state.acHighlightIdx-1,0)})}else if(e.key==="Enter"&&state.acHighlightIdx>=0){e.preventDefault();onChange(filtered[state.acHighlightIdx]);setState({acFocused:false,acHighlightIdx:-1})}else if(e.key==="Escape"){setState({acFocused:false,acHighlightIdx:-1})}}
   });
