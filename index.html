@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MI-4 File Name Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{min-height:100vh;background:linear-gradient(165deg,#0c1222 0%,#162032 40%,#0c1222 100%);font-family:'DM Sans',sans-serif;display:flex;flex-direction:column;align-items:center;padding:24px 16px 60px}
+.mono{font-family:'JetBrains Mono',monospace}
+.card{width:100%;max-width:600px;background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.35),0 1px 3px rgba(0,0,0,.06);overflow:hidden}
+.lbl{display:block;margin-bottom:5px}
+.lbl-text{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#475569}
+.lbl-hint{font-size:11px;color:#94a3b8;margin-left:6px;font-weight:400;letter-spacing:0}
+.inp{width:100%;padding:9px 12px;font-size:14px;border:1.5px solid #d1d5db;border-radius:8px;background:#fff;color:#0f172a;outline:none;font-family:'DM Sans',sans-serif;box-sizing:border-box;transition:border-color .15s}
+.inp:focus{border-color:#3b82f6}
+.inp-mono{font-family:'JetBrains Mono',monospace;font-size:13px}
+select.inp{cursor:pointer}
+select.inp.empty{color:#94a3b8}
+.tag{font-size:10px;font-weight:600;letter-spacing:.04em;color:#2563eb;background:rgba(37,99,235,.06);border:1px solid rgba(37,99,235,.13);border-radius:4px;padding:2px 8px;text-transform:uppercase;white-space:nowrap;display:inline-block}
+.field-tag{font-size:10px;font-weight:600;letter-spacing:.04em;border-radius:4px;padding:2px 8px;text-transform:uppercase;white-space:nowrap;display:inline-block;transition:all .2s}
+.field-tag.done{color:#166534;background:rgba(22,101,52,.06);border:1px solid rgba(22,101,52,.18)}
+.field-tag.pending{color:#2563eb;background:rgba(37,99,235,.06);border:1px solid rgba(37,99,235,.13)}
+.sm-btn{font-size:11px;font-weight:600;border-radius:5px;padding:4px 10px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .15s;border-width:1px;border-style:solid}
+.sm-btn:disabled{opacity:.4;cursor:default}
+.nav-link{background:none;border:none;cursor:pointer;font-size:12px;font-weight:600;color:#60a5fa;padding:0;font-family:'DM Sans',sans-serif;text-decoration:underline;text-underline-offset:3px}
+.back-link{display:inline-flex;align-items:center;gap:5px;background:none;border:none;cursor:pointer;font-size:13px;font-weight:600;color:#60a5fa;padding:0;font-family:'DM Sans',sans-serif;margin-bottom:16px}
+.toggle-wrap{display:inline-flex;border-radius:10px;padding:3px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);margin-bottom:16px}
+.toggle-btn{font-size:13px;font-weight:600;padding:7px 22px;border-radius:8px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s}
+.toggle-btn.active{color:#0f172a;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.toggle-btn.inactive{color:#94a3b8;background:transparent}
+.info-card{margin-bottom:14px;padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px}
+.info-card .desc{font-size:12px;color:#334155;line-height:1.5;margin-bottom:4px}
+.info-card .example{font-size:11px;color:#64748b}
+.fpid-card{margin-top:-8px;margin-bottom:14px;padding:8px 12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:#0369a1}
+.design-preview{margin-top:-8px;margin-bottom:14px;padding:8px 12px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:6px;font-size:11px;color:#6d28d9}
+.permit-info{margin-top:-8px;margin-bottom:10px;padding:8px 12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;font-size:11px;color:#0369a1}
+.output-box{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:500;line-height:1.6;background:#fff;border-radius:8px;padding:11px 14px;word-break:break-all;min-height:20px;transition:all .3s}
+.seg-card{display:grid;grid-template-columns:18px 1fr;gap:10px;align-items:start;padding:8px 12px;border-radius:8px;cursor:pointer;transition:all .15s}
+.seg-card.pass{background:#f0fdf4;border:1px solid #bbf7d0}
+.seg-card.fail{background:#fef2f2;border:1px solid #fecaca}
+.seg-explain{margin-top:6px;padding:6px 10px;background:rgba(0,0,0,.03);border-radius:4px;font-size:11px;color:#475569;line-height:1.5;border-left:3px solid #7c3aed}
+.autocomplete-wrap{position:relative;margin-bottom:14px}
+.autocomplete-drop{position:absolute;top:100%;left:0;right:0;z-index:20;background:#fff;border:1.5px solid #d1d5db;border-top:none;border-radius:0 0 8px 8px;box-shadow:0 8px 24px rgba(0,0,0,.1);max-height:220px;overflow-y:auto}
+.autocomplete-item{padding:8px 12px;font-size:13px;color:#334155;cursor:pointer;border-bottom:1px solid #f3f4f6}
+.autocomplete-item:last-child{border-bottom:none}
+.autocomplete-item:hover,.autocomplete-item.hl{background:#eff6ff}
+.mb14{margin-bottom:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hidden{display:none}
+@keyframes fadeSlide{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeSlide .2s ease}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script src="mi4-tool.js"></script>
+</body>
+</html>
