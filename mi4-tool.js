@@ -71,7 +71,7 @@ function buildExpectedPattern(conv){
 }
 
 // ═══════ STATE ═══════
-let state={view:"main",mode:"generator",convention:"",title:"",subTitle:"",fpidShort:"",project:"",component:"",submittalPhase:"",submittalIdRaw:"",isResubmittal:false,resubmittalIdRaw:"",formattedDate:"",customIdFormat:"",customIdValue:"",valFilename:"",valConvOverride:"",valExpandedSeg:null,abbrSearch:"",convExpanded:null,acFocused:false,acHighlightIdx:-1,copied:false};
+let state={view:"main",mode:"generator",convention:"",title:"",subTitle:"",fpidShort:"",project:"",component:"",submittalPhase:"",submittalIdRaw:"",isResubmittal:false,resubmittalIdRaw:"",formattedDate:"",customIdFormat:"",customIdValue:"",valFilename:"",valConvOverride:"",valExpandedSeg:null,abbrSearch:"",convExpanded:null,acFocused:false,acHighlightIdx:-1,copied:false,patternCopied:false};
 
 let _restoring=false;
 function setState(patch){
@@ -300,8 +300,10 @@ function renderGenerator(){
   if(needs.formattedDate){
     const dw=h("div",{className:"mb14"});
     dw.append(h("label",{className:"lbl"},h("span",{className:"lbl-text"},"Date"),h("span",{className:"lbl-hint"},state.formattedDate||"YYYY-MM-DD")));
-    dw.append(h("input",{className:"inp",type:"date",value:state.formattedDate,onInput:e=>setState({formattedDate:e.target.value})}));
-    inner.append(dw)
+    const dr=h("div",{style:{display:"flex",gap:"8px",alignItems:"center"}});
+    dr.append(h("input",{className:"inp",type:"date",value:state.formattedDate,style:{flex:"1"},onInput:e=>setState({formattedDate:e.target.value})}));
+    dr.append(h("button",{className:"sm-btn",style:{color:"#2563eb",background:"rgba(37,99,235,.07)",borderColor:"rgba(37,99,235,.18)",whiteSpace:"nowrap"},onClick:()=>setState({formattedDate:new Date().toLocaleDateString("en-CA")})},"Today"));
+    dw.append(dr);inner.append(dw)
   }
 
   fields.append(inner);frag.append(fields);
@@ -319,7 +321,7 @@ function renderGenerator(){
     hdrR.append(h("button",{className:"sm-btn",style:{color:state.copied?"#16a34a":"#2563eb",background:state.copied?"rgba(22,163,74,.07)":"rgba(37,99,235,.07)",borderColor:state.copied?"rgba(22,163,74,.18)":"rgba(37,99,235,.18)"},onClick:()=>{navigator.clipboard.writeText(generatedName);setState({copied:true});setTimeout(()=>setState({copied:false}),1800)}},state.copied?"\u2713 Copied":"Copy"))
   }
   hdr.append(hdrL,hdrR);out.append(hdr);
-  out.append(h("div",{className:"output-box",style:{color:isValid?"#0f172a":generatedName?"#92400e":"#94a3b8",border:"1.5px solid "+(isValid?"#86efac":generatedName?"#fde68a":"#e2e8f0")}},generatedName||"Fill in the required fields above..."));
+  out.append(h("div",{className:"output-box",style:{color:isValid?"#0f172a":generatedName?"#92400e":"#94a3b8",border:"1.5px solid "+(isValid?"#86efac":generatedName?"#fde68a":"#e2e8f0"),cursor:generatedName?"pointer":"default"},title:generatedName?"Click to copy":"",onClick:()=>{if(generatedName){navigator.clipboard.writeText(generatedName);setState({copied:true});setTimeout(()=>setState({copied:false}),1800)}}},generatedName||"Fill in the required fields above..."));
   if(generatedName){
     const meta=h("div",{style:{marginTop:"6px",display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}});
     meta.append(h("span",{style:{fontSize:"10px",fontWeight:"700",letterSpacing:".06em",textTransform:"uppercase",color:"#475569",background:"#e2e8f0",borderRadius:"4px",padding:"2px 8px",display:"inline-block"}},"."+conv.ext));
@@ -364,7 +366,7 @@ function renderValidator(){
       h("div",{style:{fontSize:"11px",color:result.overall?"#15803d":"#b91c1c"}},passCount+"/"+totalSegs+" segments passed \u00B7 "+activeConv?.desc)));
     const bR=h("div",{style:{display:"flex",gap:"6px",alignItems:"center"}});
     if(detected&&!co)bR.append(h("span",{style:{fontSize:"10px",fontWeight:"600",color:"#6366f1",background:"rgba(99,102,241,.08)",border:"1px solid rgba(99,102,241,.18)",borderRadius:"4px",padding:"2px 8px",textTransform:"uppercase"}},"Auto-detected"));
-    if(!result.overall)bR.append(h("button",{className:"sm-btn",style:{color:"#7c3aed",background:"rgba(124,58,237,.06)",borderColor:"rgba(124,58,237,.18)"},onClick:()=>{navigator.clipboard.writeText(buildExpectedPattern(activeConv))}},"Copy Pattern"));
+    if(!result.overall)bR.append(h("button",{className:"sm-btn",style:{color:state.patternCopied?"#16a34a":"#7c3aed",background:state.patternCopied?"rgba(22,163,74,.07)":"rgba(124,58,237,.06)",borderColor:state.patternCopied?"rgba(22,163,74,.18)":"rgba(124,58,237,.18)"},onClick:()=>{navigator.clipboard.writeText(buildExpectedPattern(activeConv));setState({patternCopied:true});setTimeout(()=>setState({patternCopied:false}),1800)}},state.patternCopied?"\u2713 Copied":"Copy Pattern"));
     banner.append(bL,bR);resWrap.append(banner);
 
     // Parsed structure bar
@@ -407,7 +409,7 @@ function renderValidator(){
     if(!result.overall){
       const cmp=h("div",{style:{borderTop:"1px solid #edf0f4",padding:"14px 24px 18px",background:"#f8fafc"}});
       cmp.append(h("div",{style:{fontSize:"10px",fontWeight:"700",letterSpacing:".07em",textTransform:"uppercase",color:"#475569",marginBottom:"10px"}},"Comparison"));
-      const grid=h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px"}});
+      const grid=h("div",{className:"grid2",style:{gap:"12px"}});
       const left=h("div",null,h("div",{style:{fontSize:"10px",fontWeight:"600",color:"#991b1b",textTransform:"uppercase",letterSpacing:".05em",marginBottom:"5px"}},"Entered"),
         h("div",{className:"mono",style:{fontSize:"11px",fontWeight:"500",color:"#b91c1c",wordBreak:"break-all",background:"#fff",border:"1.5px solid #fca5a5",borderRadius:"6px",padding:"9px 10px",lineHeight:"1.5"}},fn));
       const right=h("div",null,h("div",{style:{fontSize:"10px",fontWeight:"600",color:"#166534",textTransform:"uppercase",letterSpacing:".05em",marginBottom:"5px"}},"Expected Pattern"),
