@@ -14,7 +14,7 @@ const FPIDS=[{fpid:"201210-8",desc:"I-4 from east of U.S. 27 to west of S.R. 429
 const SUBMITTAL_PHASES=[{desc:"Prelim Engineering - Line and Grade",prefix:"",suffix:"15pct"},{desc:"Prelim Engineering - Phase 1",prefix:"",suffix:"30pct"},{desc:"Prelim Engineering - Phase 1A",prefix:"",suffix:"30Apct"},{desc:"Prelim Engineering - Phase 2",prefix:"",suffix:"45pct"},{desc:"Design - Phase Submittal (60%)",prefix:"PS",suffix:"60pct"},{desc:"Design - Phase Submittal (90%)",prefix:"PS",suffix:"90pct"},{desc:"Design - Final Submittal (100%)",prefix:"FS",suffix:"Final"},{desc:"Design - Released for Construction",prefix:"RC",suffix:"RFC"},{desc:"Design - Project Documentation",prefix:"PD",suffix:"-"},{desc:"Design - Shop Drawing",prefix:"SD",suffix:"-"},{desc:"Design - Contract Submittal",prefix:"CS",suffix:"-"},{desc:"Design - Courtesy Review",prefix:"CR",suffix:"-"},{desc:"Design - Field Correction Request",prefix:"FCR",suffix:"-"},{desc:"Design - Request for Information",prefix:"RFI",suffix:"-"},{desc:"Design - Request for Modification",prefix:"RFM",suffix:"-"}];
 const COMPONENTS=[{name:"Roadway Plans",id:"PLANS-01-ROADWAY"},{name:"Signing and Pavement Marking Plans",id:"PLANS-02-SIGNINGMARKING"},{name:"Signalization Plans",id:"PLANS-03-SIGNALIZATION"},{name:"Intelligent Transportation System (ITS) Plans",id:"PLANS-04-ITS"},{name:"Lighting Plans",id:"PLANS-05-LIGHTING"},{name:"Landscaping Plans",id:"PLANS-06-LANDSCAPE"},{name:"Architectural Plans",id:"PLANS-07-ARCHITECHTURAL"},{name:"Structures Plans",id:"PLANS-08-STRUCTURES"},{name:"Toll Plans",id:"PLANS-09-TOLLFACILITIES"},{name:"Utility Work by Highway Contractor Agreement Plans",id:"PLANS-10-UTILITYWORK"},{name:"Roadway Plans - Geotechnical Core Borings",id:"PLANS-01-ROADWAY-COREBORINGS"},{name:"Roadway Plans - Verification of Underground Utilities Survey",id:"PLANS-01-ROADWAY-VERIFIEDUTILITIES"},{name:"Roadway Plans - Tree Survey",id:"PLANS-01-ROADWAY-TREESURVEY"},{name:"CADD Folder",id:"CADD"}];
 const PERMITS=[{name:"Permit (SFWMD ERP)",regex:"\\d{2}-\\d{5}-[a-zA-Z]",prefix:"Permit-SFWMD-ERP",hint:"##-#####-A",example:"50-12345-P",mask:"2 digits, dash, 5 digits, dash, 1 letter"},{name:"Permit (SWFWMD ERP)",regex:"^(43-)?\\d{7}$",prefix:"Permit-SWFWMD-ERP",hint:"####### or 43-#######",example:"4301234",mask:"7 digits (optionally prefixed with 43-)"},{name:"Permit (USACE Section 404)",regex:"^SAJ-\\d{4}-\\d{5}(\\(.*\\))?$",prefix:"Permit-USACE-404",hint:"SAJ-####-#####",example:"SAJ-2024-00123",mask:"SAJ, dash, 4 digits, dash, 5 digits"},{name:"Permit (USFWS Biological Opinion)",regex:"\\b\\d{4}-\\d{7}\\b",prefix:"Permit-USFWS-BO",hint:"####-#######",example:"2024-0012345",mask:"4 digits, dash, 7 digits"}];
-const TITLE_SUGGESTIONS=["ICE Report","Design Variation Package","Design Exception Package","Design Memorandum","Design Variation Memorandum","Correspondence","Lane Repurposing Approval","FAA Determination","Intersection Number Request Form","Contract Time Memorandum","Permit Exemption Letter","Structure Number Request Form","Value Engineering Report","Typical Section Package","Pavement Design Report","AutoTurn Analysis","Superelevation Analysis","Cross Slope Evaluation","Barrier Length of Need Analysis","Sight Distance Analysis","Lane Closure Analysis","Work Zone Speed Study","Summary of Pay Items Report","Cross Section Sheet","Transportation Management Plan","ADA Assessment Report","Roadway Safety Assessment Report","Roadway Operational Assessment Report","Existing Roadway Characteristics Assessment Report","Community Awareness Plan","Express Lanes Separation Treatment Selection Memo","Location Hydraulics Report","Bridge Hydraulics Report","Pond Siting Report","Drainage Report","Base Clearance Water Evaluation Report","Pipe Inspection Report","Attachment to Barrier Calculations","Multi-Post Sign Report","Concept Signing Plan","Signal Warrant Report","Signal Analysis Report","ITS Concept of Operations","ITS Power Design Analysis Report","Express Lanes Systems Engineering Mgmt Plan","Express Lanes Concept of Operations","Voltage Drop Calculations","Lighting Justification Report","Lighting Design Analysis Report","Landscape Maintenance Plan","Bridge Structure Design Calculations","Bridge Load Rating Report","Retaining Wall Design Calculations","Mast Arm Design Calculations","Box Culvert Design Calculations","Ancillary Structures Report","Bridge Development Report","Toll Siting Technical Memorandum","Roadway Geotechnical Report","Structures Geotechnical Report"];
+const TITLE_SUGGESTIONS=["ICE Report","Design Variation Package","Design Exception Package","Design Memorandum","Design Variation Memorandum","Correspondence","Lane Repurposing Approval","FAA Determination","Intersection Number Request Form","Contract Time Memorandum","Permit Exemption Letter","Structure Number Request Form","Value Engineering Report","Typical Section Package","Pavement Design Report","AutoTurn Analysis","Superelevation Analysis","Cross Slope Evaluation","Barrier Length of Need Analysis","Sight Distance Analysis","Lane Closure Analysis","Work Zone Speed Study","Summary of Pay Items Report","Cross Section Sheet","Transportation Management Plan","ADA Assessment Report","Roadway Safety Assessment Report","Roadway Operational Assessment Report","Existing Roadway Characteristics Assessment Report","Community Awareness Plan","Express Lanes Separation Treatment Selection Memo","Location Hydraulics Report","Bridge Hydraulics Report","Pond Siting Report","Drainage Report","Base Clearance Water Evaluation Report","Pipe Inspection Report","Attachment to Barrier Calculations","Multi-Post Sign Report","Concept Signing Plan","Signal Warrant Report","Signal Analysis Report","ITS Concept of Operations","ITS Power Design Analysis Report","Express Lanes Systems Engineering Mgmt Plan","Express Lanes Concept of Operations","Voltage Drop Calculations","Lighting Justification Report","Lighting Design Analysis Report","Landscape Maintenance Plan","Bridge Structure Design Calculations","Bridge Load Rating Report","Retaining Wall Design Calculations","Mast Arm Design Calculations","Box Culvert Design Calculations","Ancillary Structures Report","Bridge Development Report","Toll Siting Technical Memorandum","Roadway Geotechnical Report","Structures Geotechnical Report","Intersection Lighting Retrofit Report","Lighting Agency Coordination","Landscape Maintenance Cost Estimate","Irrigation Feasibility Report","Landscape Opportunity Plan","Temporary Detour Bridge Calculations","Temporary Retaining Wall Design Calcs","Temporary Shoring Design Calculations","Overhead Sign Structure Design Calcs","High Mast Lighting Design Calcs","Express Lanes Diagrams and Concept Plans","Tolls Mechanical Design Analysis Report","Tolls Structural Design Analysis Report","Tolls Gantry Design Analysis Report","Tolls Power Design Analysis Report","GTR Deviations","Electrical Calculations","Mechanical Calculations","Plumbing Calculations","Structural Calculations","Water Feature Hydraulic Calculations","Civil Site Design Documentation","Electrical Design Analysis Report","Mechanical Design Analysis Report","Sign Structure Geotechnical Report","Signal Structure Geotechnical Report","ITS Geotechnical Report","Lighting Geotechnical Report","Architectural Geotechnical Investigation Report"];
 
 // ═══════ UTILITIES ═══════
 const ALL_FPID_FULLS=new Set(FPIDS.map(f=>f.full));
@@ -89,9 +89,16 @@ function buildExpectedPattern(conv){
 }
 
 // ═══════ STATE ═══════
-let state={view:"main",mode:"generator",convention:"",title:"",subTitle:"",fpidShort:"",project:"",component:"",submittalPhase:"",submittalIdRaw:"",isResubmittal:false,resubmittalIdRaw:"",formattedDate:"",customIdFormat:"",customIdValue:"",valFilename:"",valConvOverride:"",valExpandedSeg:null,abbrSearch:"",convExpanded:null};
+let state={view:"main",mode:"generator",convention:"",title:"",subTitle:"",fpidShort:"",project:"",component:"",submittalPhase:"",submittalIdRaw:"",isResubmittal:false,resubmittalIdRaw:"",formattedDate:"",customIdFormat:"",customIdValue:"",valFilename:"",valConvOverride:"",valExpandedSeg:null,abbrSearch:"",convExpanded:null,acFocused:false,acHighlightIdx:-1,copied:false};
 
-function setState(patch){Object.assign(state,patch);render()}
+let _restoring=false;
+function setState(patch){
+  const app=document.getElementById("app");const ae=document.activeElement;let fi=-1,ss=-1,se=-1,tag="";
+  if(ae&&app&&app.contains(ae)){tag=ae.tagName;const all=[...app.querySelectorAll("input,select,textarea")];fi=all.indexOf(ae);if(typeof ae.selectionStart==="number"){try{ss=ae.selectionStart;se=ae.selectionEnd}catch(e){}}}
+  Object.assign(state,patch);_restoring=true;render();
+  if(fi>-1){const all=[...app.querySelectorAll("input,select,textarea")];const el=all[fi];if(el&&el.tagName===tag){el.focus();if(ss>-1&&typeof el.selectionStart==="number"){try{el.setSelectionRange(ss,se)}catch(e){}}}}
+  _restoring=false;
+}
 
 // ═══════ RENDER ENGINE ═══════
 function h(tag,attrs,...children){
@@ -121,6 +128,31 @@ function inputEl(label,hint,value,onChange,placeholder,attrs){
   const lbl=h("label",{className:"lbl"},h("span",{className:"lbl-text"},label),hint?h("span",{className:"lbl-hint"},hint):null);
   const inp=h("input",{className:"inp",type:"text",value,placeholder:placeholder||"",...(attrs||{}),onInput:e=>onChange(e.target.value)});
   wrap.append(lbl,inp);return wrap
+}
+
+function autocompleteEl(label,hint,value,onChange,placeholder,suggestions){
+  const wrap=h("div",{className:"autocomplete-wrap"});
+  const lbl=h("label",{className:"lbl"},h("span",{className:"lbl-text"},label),hint?h("span",{className:"lbl-hint"},hint):null);
+  const q=value?value.toLowerCase():"";
+  const filtered=q?suggestions.filter(s=>s.toLowerCase().includes(q)).slice(0,8):suggestions.slice(0,8);
+  const inp=h("input",{className:"inp",type:"text",value,placeholder:placeholder||"",autocomplete:"off",
+    onInput:e=>onChange(e.target.value),
+    onFocus:()=>{if(!state.acFocused)setState({acFocused:true,acHighlightIdx:-1})},
+    onBlur:()=>{if(!_restoring)setTimeout(()=>{if(state.acFocused)setState({acFocused:false,acHighlightIdx:-1})},150)},
+    onKeydown:e=>{if(!state.acFocused||!filtered.length)return;if(e.key==="ArrowDown"){e.preventDefault();setState({acHighlightIdx:Math.min(state.acHighlightIdx+1,filtered.length-1)})}else if(e.key==="ArrowUp"){e.preventDefault();setState({acHighlightIdx:Math.max(state.acHighlightIdx-1,0)})}else if(e.key==="Enter"&&state.acHighlightIdx>=0){e.preventDefault();onChange(filtered[state.acHighlightIdx]);setState({acFocused:false,acHighlightIdx:-1})}else if(e.key==="Escape"){setState({acFocused:false,acHighlightIdx:-1})}}
+  });
+  wrap.append(lbl,inp);
+  if(state.acFocused&&filtered.length>0){
+    const drop=h("div",{className:"autocomplete-drop"});
+    filtered.forEach((s,i)=>{
+      const item=h("div",{className:"autocomplete-item"+(i===state.acHighlightIdx?" hl":""),
+        onMousedown:e=>{e.preventDefault();onChange(s);setState({acFocused:false,acHighlightIdx:-1})}});
+      if(q){const li=s.toLowerCase().indexOf(q);if(li>-1){item.append(document.createTextNode(s.slice(0,li)),h("strong",{style:{color:"#2563eb"}},s.slice(li,li+q.length)),document.createTextNode(s.slice(li+q.length)))}else item.append(s)}else item.append(s);
+      drop.append(item)
+    });
+    wrap.append(drop)
+  }
+  return wrap
 }
 
 function fieldTag(label,filled){
@@ -216,7 +248,7 @@ function renderGenerator(){
   // Title
   if(needs.title){
     const row=h("div",{className:"grid2"});
-    row.append(inputEl("Title","auto-abbreviated",state.title,v=>setState({title:v}),"e.g. Pavement Design Report"));
+    row.append(autocompleteEl("Title","auto-abbreviated",state.title,v=>setState({title:v}),"e.g. Pavement Design Report",TITLE_SUGGESTIONS));
     row.append(inputEl("Sub-Title","optional",state.subTitle,v=>setState({subTitle:v}),"e.g. Segment 1"));
     inner.append(row)
   }
@@ -300,9 +332,9 @@ function renderGenerator(){
   hdrL.append(h("span",{style:{fontSize:"11px",fontWeight:"700",letterSpacing:".07em",textTransform:"uppercase",color:isValid?"#166534":generatedName?"#92400e":"#94a3b8"}},"Generated File Name"));
   if(totalCount>0)hdrL.append(h("span",{style:{fontSize:"10px",fontWeight:"600",color:isValid?"#166534":"#92400e",background:isValid?"#dcfce7":"#fef3c7",border:"1px solid "+(isValid?"#bbf7d0":"#fde68a"),borderRadius:"10px",padding:"1px 8px"}},isValid?"\u2713 Valid":filledCount+"/"+totalCount));
   const hdrR=h("div",{style:{display:"flex",gap:"6px"}});
-  hdrR.append(h("button",{className:"sm-btn",style:{color:"#64748b",background:"transparent",borderColor:"#d1d5db"},onClick:()=>setState({convention:"",title:"",subTitle:"",fpidShort:"",project:"",component:"",submittalPhase:"",submittalIdRaw:"",isResubmittal:false,resubmittalIdRaw:"",formattedDate:"",customIdFormat:"",customIdValue:""})},"Reset"));
+  hdrR.append(h("button",{className:"sm-btn",style:{color:"#64748b",background:"transparent",borderColor:"#d1d5db"},onClick:()=>setState({convention:"",title:"",subTitle:"",fpidShort:"",project:"",component:"",submittalPhase:"",submittalIdRaw:"",isResubmittal:false,resubmittalIdRaw:"",formattedDate:"",customIdFormat:"",customIdValue:"",copied:false})},"Reset"));
   if(isValid&&generatedName){
-    hdrR.append(h("button",{className:"sm-btn",style:{color:"#2563eb",background:"rgba(37,99,235,.07)",borderColor:"rgba(37,99,235,.18)"},onClick:()=>{navigator.clipboard.writeText(generatedName)}},"Copy"))
+    hdrR.append(h("button",{className:"sm-btn",style:{color:state.copied?"#16a34a":"#2563eb",background:state.copied?"rgba(22,163,74,.07)":"rgba(37,99,235,.07)",borderColor:state.copied?"rgba(22,163,74,.18)":"rgba(37,99,235,.18)"},onClick:()=>{navigator.clipboard.writeText(generatedName);setState({copied:true});setTimeout(()=>setState({copied:false}),1800)}},state.copied?"\u2713 Copied":"Copy"))
   }
   hdr.append(hdrL,hdrR);out.append(hdr);
   out.append(h("div",{className:"output-box",style:{color:isValid?"#0f172a":generatedName?"#92400e":"#94a3b8",border:"1.5px solid "+(isValid?"#86efac":generatedName?"#fde68a":"#e2e8f0")}},generatedName||"Fill in the required fields above..."));
