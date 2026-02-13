@@ -152,13 +152,13 @@ function parseFilename(fn,cid){
           const isFixedText=t.value.length>1&&!/^[_.\-]$/.test(t.value);
           if(isFixedText){
             const lbl=t.value==="GuideSignWorksheets"?"Fixed Suffix":t.value==="MI4"?"Program Prefix":"Literal";
-            result.push({label:lbl,value:t.value,valid:true,expected:t.value})
+            result.push({label:lbl,value:t.value,valid:true,expected:t.value,pos:p})
           }
           p+=t.value.length
         }else{
           if(t.optional)return null; // optional group failed
           const isFixedText=t.value.length>1&&!/^[_.\-]$/.test(t.value);
-          if(isFixedText){result.push({label:"Literal",value:"(missing)",valid:false,expected:t.value})}
+          if(isFixedText){result.push({label:"Literal",value:"(missing)",valid:false,expected:t.value,pos:p})}
           allOk=false;break
         }
       }else if(t.type==="field"){
@@ -204,14 +204,14 @@ function parseFilename(fn,cid){
           // Handle title[-subtitle] pattern: if this is title and next optional group has subtitle
           vals[t.id]=val;
           const valid=val.length>0;
-          result.push({label:lbl,value:val||"(missing)",valid,expected:"PascalCase abbreviated title"});
+          result.push({label:lbl,value:val||"(missing)",valid,expected:"PascalCase abbreviated title",pos:p});
           if(!valid)allOk=false;
           p=boundary
         }else if(v.set){
           const m=_matchField(t.id,str,p);
           if(m){
             vals[t.id]=m.value;
-            result.push({label:lbl,value:m.value,valid:true,expected});
+            result.push({label:lbl,value:m.value,valid:true,expected,pos:p});
             p+=m.len
           }else{
             if(t.optional)return null; // optional group failed
@@ -221,7 +221,7 @@ function parseFilename(fn,cid){
             const nextSep=str.slice(p).search(/[_.\-]/);
             if(nextSep>0)errVal=str.slice(p,p+nextSep);
             else if(p<str.length)errVal=str.slice(p);
-            result.push({label:lbl,value:errVal,valid:false,expected});
+            result.push({label:lbl,value:errVal,valid:false,expected,pos:p});
             allOk=false;
             if(nextSep>0)p+=nextSep;else break
           }
@@ -229,7 +229,7 @@ function parseFilename(fn,cid){
           const m=_matchField(t.id,str,p);
           if(m){
             vals[t.id]=m.value;
-            result.push({label:lbl,value:m.value,valid:true,expected});
+            result.push({label:lbl,value:m.value,valid:true,expected,pos:p});
             p+=m.len
           }else{
             if(t.optional)return null; // optional group failed
@@ -237,7 +237,7 @@ function parseFilename(fn,cid){
             const nextSep=str.slice(p).search(/[_.\-]/);
             if(nextSep>0)errVal=str.slice(p,p+nextSep);
             else if(p<str.length)errVal=str.slice(p);
-            result.push({label:lbl,value:errVal,valid:false,expected});
+            result.push({label:lbl,value:errVal,valid:false,expected,pos:p});
             allOk=false;
             if(nextSep>0)p+=nextSep;else break
           }
@@ -246,7 +246,7 @@ function parseFilename(fn,cid){
     }
     // Check for unexpected trailing content
     if(p<str.length){
-      result.push({label:"Unexpected",value:str.slice(p),valid:false,expected:"(none)"});
+      result.push({label:"Unexpected",value:str.slice(p),valid:false,expected:"(none)",pos:p});
       allOk=false
     }
     return{segs:result,ok:allOk,vals,pos:p}
@@ -625,7 +625,6 @@ function renderGenerator(){
   if(generatedName){
     const meta=h("div",{style:{marginTop:"6px",display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}});
     meta.append(h("span",{style:{fontSize:"10px",fontWeight:"700",letterSpacing:".06em",textTransform:"uppercase",color:"#475569",background:"#e2e8f0",borderRadius:"4px",padding:"2px 8px",display:"inline-block"}},"."+conv.ext));
-    meta.append(h("span",{style:{fontSize:"11px",color:"#64748b"}},(conv.separator||"_")==="-"?"sep: hyphen ( - )":"sep: underscore ( _ )"));
     if(!isValid)meta.append(h("span",{style:{fontSize:"11px",color:"#b45309",fontWeight:"500"}},"\u2014 missing required fields"));
     out.append(meta)
   }
@@ -674,9 +673,10 @@ function renderValidator(){
     psBar.append(h("div",{style:{fontSize:"10px",fontWeight:"700",letterSpacing:".07em",textTransform:"uppercase",color:"#475569",marginBottom:"6px"}},"Parsed Structure"));
     const psLine=h("div",{className:"mono",style:{fontSize:"12px",lineHeight:"2",wordBreak:"break-all"}});
     const nonExt=result.segments.filter(s=>s.label!=="Extension");
+    const valBase=fn.trim().slice(0,fn.trim().lastIndexOf("."));
     nonExt.forEach((seg,i)=>{
       const color=SEG_COLORS[i%SEG_COLORS.length];
-      if(i>0)psLine.append(h("span",{style:{color:"#94a3b8",margin:"0 1px"}},(activeConv?.separator||"_")));
+      if(i>0){const prev=nonExt[i-1];const prevEnd=prev.pos!=null&&prev.value!=="(missing)"?prev.pos+prev.value.length:null;const sep=prevEnd!=null&&seg.pos!=null?valBase.slice(prevEnd,seg.pos):null;if(sep)psLine.append(h("span",{style:{color:"#94a3b8",margin:"0 1px"}},sep))}
       psLine.append(h("span",{style:{color:seg.valid?color:"#dc2626",background:seg.valid?color+"0d":"#fef2f2",border:"1px solid "+(seg.valid?color+"30":"#fca5a5"),borderRadius:"3px",padding:"1px 4px",cursor:"pointer",textDecoration:seg.valid?"none":"wavy underline #ef4444"},title:"Click: "+seg.label,onClick:()=>setState({valExpandedSeg:state.valExpandedSeg===i?null:i})},seg.value))
     });
     const extSeg=result.segments.find(s=>s.label==="Extension");
@@ -816,7 +816,6 @@ function renderConventions(){
       detail.append(patWrap);
 
       detail.append(h("div",{style:{display:"flex",gap:"16px",fontSize:"11px",color:"#64748b",flexWrap:"wrap"}},
-        h("span",null,"Separator: ",h("strong",{style:{color:"#334155"}},(c.separator||"_")==="-"?"hyphen ( - )":"underscore ( _ )")),
         h("span",null,"Extension: ",h("strong",{style:{color:"#334155"}},"."+c.ext))));
       item.append(detail)
     }

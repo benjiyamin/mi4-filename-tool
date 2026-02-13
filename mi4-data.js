@@ -5,7 +5,6 @@ const CONVENTIONS = [
     desc: "KMZ",
     exampleDoc: "DocumentName",
     ext: "kmz",
-    separator: "_",
     format: "{projectId}_{fpid}_{title}[-{subtitle}]_{date}",
     info: "Google Earth project mapping files \u2014 exported KMZ overlays, alignments, and project boundaries.",
     exampleName: "P3_201210-9_ProjectLimits_2025-01-15.kmz"
@@ -15,7 +14,6 @@ const CONVENTIONS = [
     desc: "FDOT Production Deliverables",
     exampleDoc: "PLANS-XX-SUBDISCIPLINE",
     ext: "pdf",
-    separator: "-",
     format: "{fullFpid}-{deliverableId}[-{revisionId}]",
     info: "Final plan sheet deliverables submitted to FDOT \u2014 one file per discipline, no phase suffix.",
     exampleName: "20121095201-PLANS-01-ROADWAY.pdf"
@@ -25,7 +23,6 @@ const CONVENTIONS = [
     desc: "FDOT Production Deliverables (Phased)",
     exampleDoc: "PLANS-XX-SUBDISCIPLINE",
     ext: "pdf",
-    separator: "-",
     format: "{fullFpid}-{deliverableId}-{phaseId}",
     info: "Same as Production Deliverables but for phased submittals \u2014 includes a submittal phase suffix.",
     exampleName: "20121095201-PLANS-01-ROADWAY-90pct.pdf"
@@ -35,7 +32,6 @@ const CONVENTIONS = [
     desc: "Guide Sign Worksheets",
     exampleDoc: "GuideSignWorksheets",
     ext: "pdf",
-    separator: "-",
     format: "{fullFpid}-GuideSignWorksheets",
     info: "Guide sign design worksheets submitted with the full 11-digit FPID identifier.",
     exampleName: "20121095201-GuideSignWorksheets.pdf"
@@ -45,7 +41,6 @@ const CONVENTIONS = [
     desc: "Design Submittal",
     exampleDoc: "DocumentName",
     ext: "pdf",
-    separator: "_",
     format: "{projectId}-{submittalPrefix}-{submittalId}.{resubmittalId}_{title}[-{subtitle}]",
     info: "Design documents tracked by project, phase, and submittal number \u2014 reports, calculations, memos, and analysis packages.",
     exampleName: "P3-PS-0001.00_PvmtDsgnRpt.pdf"
@@ -55,7 +50,6 @@ const CONVENTIONS = [
     desc: "FPID Document",
     exampleDoc: "DocumentName",
     ext: "pdf",
-    separator: "_",
     format: "{fpid}_{title}[-{subtitle}]",
     info: "General project documents identified by short FPID \u2014 correspondence, approvals, and miscellaneous deliverables.",
     exampleName: "201210-9_TypSectionPkg.pdf"
@@ -65,7 +59,6 @@ const CONVENTIONS = [
     desc: "Permit Document",
     exampleDoc: "XXXXX-XX",
     ext: "pdf",
-    separator: "_",
     format: "{permitId}_Permit-{permitCode}",
     info: "Permit documents filed by agency permit number \u2014 ERP, NPDES, Section 404, Biological Opinions, and dewatering permits.",
     exampleName: "50-12345-P_Permit-SFWMD-ERP.pdf"
@@ -75,7 +68,6 @@ const CONVENTIONS = [
     desc: "FPID Document (External)",
     exampleDoc: "DocumentName",
     ext: "pdf",
-    separator: "_",
     format: "{externalFpid}_{title}[-{subtitle}]",
     info: "External project documents identified by a non-MI4 FPID number in ######-# format.",
     exampleName: "201210-3_NEPADocs.pdf"
@@ -85,7 +77,6 @@ const CONVENTIONS = [
     desc: "Program Document",
     exampleDoc: "DocumentName",
     ext: "pdf",
-    separator: "_",
     format: "MI4_{title}[-{subtitle}]",
     info: "Program-level documents not tied to a specific FPID \u2014 prefixed with MI4.",
     exampleName: "MI4_InterimDrngTypSection.pdf"
