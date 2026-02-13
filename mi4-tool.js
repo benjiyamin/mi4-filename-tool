@@ -5,10 +5,14 @@ const ALL_FPID_SHORTS=new Set(FPIDS.map(f=>f.fpid));
 const ALL_COMPONENT_IDS=new Set(COMPONENTS.map(c=>c.id));
 const ALL_SUFFIXES=new Set(SUBMITTAL_PHASES.map(s=>s.suffix).filter(s=>s&&s!=="-"));
 const ALL_PERMIT_PREFIXES=new Set(PERMITS.map(p=>p.prefix));
+const ALL_PERMIT_CODES=new Set(PERMITS.map(p=>p.code));
+const FIELD_MAP=Object.fromEntries(FIELDS.map(f=>[f.id,f]));
+const RULES_BY_CONV={};for(const r of RULES){if(!RULES_BY_CONV[r.convention])RULES_BY_CONV[r.convention]=[];RULES_BY_CONV[r.convention].push(r)}
 const DESIGN_ID_RE=/^(P[A-Z0-9]+)-(PS|FS|RC|PD|SD|CS|CR|FCR|RFI|RFM)-(\d{4})\.(\d{2})$/;
 const DATE_RE=/^\d{4}-\d{2}-\d{2}$/;
+const EXTERNAL_FPID_RE=/^\d{6}-\d$/;
 const SEG_COLORS=["#7c3aed","#0891b2","#059669","#ca8a04","#dc2626","#2563eb","#9333ea","#e11d48"];
-const SEG_EXPLAIN={"Extension":"The file extension must match the convention (.pdf, .kmz).","FPID (Full)":"An 11-digit code identifying the Financial Project ID.","FPID (Short)":"The standard FPID format (######-#) used in FDOT project tracking.","Project ID":"A short abbreviation (P1\u2013P5, PA, PB) mapped from the project name.","Deliverable ID":"A structured identifier for the plan discipline, e.g. PLANS-01-ROADWAY.","Submittal Suffix":"Indicates the submittal phase: 15pct, 30pct, 60pct, 90pct, Final, or RFC.","Design ID":"Format: ProjectAbbr-PhasePrefix-SubmittalID.ResubmittalID (e.g. P3-PS-0001.00).","Document Name":"The document title, PascalCased and abbreviated per the abbreviation table.","Formatted Date":"Date in YYYY-MM-DD format.","Custom ID":"The permit number matching the selected permit type's format.","Permit Prefix":"A standard prefix identifying the permit agency and type.","Unexpected":"Extra segments that don't belong in this convention's pattern."};
+const SEG_EXPLAIN={"Extension":"The file extension must match the convention (.pdf, .kmz).","FPID (Full)":"An 11-digit code identifying the Financial Project ID.","FPID (Short)":"The standard FPID format (######-#) used in FDOT project tracking.","Project ID":"A short abbreviation (P1\u2013P5, PA, PB) mapped from the project name.","Deliverable ID":"A structured identifier for the plan discipline, e.g. PLANS-01-ROADWAY.","Submittal Suffix":"Indicates the submittal phase: 15pct, 30pct, 60pct, 90pct, Final, or RFC.","Design ID":"Format: ProjectAbbr-PhasePrefix-SubmittalID.ResubmittalID (e.g. P3-PS-0001.00).","Document Name":"The document title, PascalCased and abbreviated per the abbreviation table.","Formatted Date":"Date in YYYY-MM-DD format.","Custom ID":"The permit number matching the selected permit type's format.","Permit Prefix":"A standard prefix identifying the permit agency and type.","External FPID":"A non-MI4 Financial Project ID in ######-# format.","Revision ID":"Revision number in REVnn format (e.g. REV01).","Program Prefix":"The fixed prefix \u2018MI4\u2019 identifying program-level documents.","Fixed Suffix":"The fixed suffix \u2018GuideSignWorksheets\u2019 for guide sign deliverables.","Unexpected":"Extra segments that don't belong in this convention's pattern."};
 
 function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
 
@@ -21,14 +25,20 @@ function applyAbbreviations(text){
 }
 function padId(v,l){const n=parseInt(v,10);return isNaN(n)||n<0?"":String(n).padStart(l,"0")}
 function validatePermitId(v,rx){if(!v||!rx)return false;try{return new RegExp(rx).test(v)}catch{return false}}
+function formatExternalFpid(v){const n=parseInt(v,10);if(isNaN(n)||n<0)return"";const s=String(n).padStart(7,"0");return s.slice(0,6)+"-"+s.slice(6)}
+function formatRevisionId(v){const n=parseInt(v,10);if(isNaN(n)||n<=0)return"";return"REV"+String(n).padStart(2,"0")}
 
 function detectConvention(fn){
   if(!fn)return null;if(fn.toLowerCase().endsWith(".kmz"))return"kmz";
+  const base=fn.replace(/\.[^.]+$/,"");
+  if(base.startsWith("MI4_"))return"program-doc";
   for(const p of PERMITS)if(fn.includes(p.prefix))return"permit";
-  const base=fn.replace(/\.[^.]+$/,"");const sc=[...COMPONENTS].sort((a,b)=>b.id.length-a.id.length);
+  const sc=[...COMPONENTS].sort((a,b)=>b.id.length-a.id.length);
   for(const c of sc){if(base.includes(c.id)){const af=base.split(c.id)[1]||"";const tp=af.replace(/^-/,"").split("-").filter(Boolean);for(const t of tp)if(ALL_SUFFIXES.has(t))return"fdot-prod-ph";return"fdot-prod"}}
+  if(base.endsWith("-GuideSignWorksheets")||base.endsWith("_GuideSignWorksheets")){const prefix=base.replace(/[-_]GuideSignWorksheets$/,"");if(ALL_FPID_FULLS.has(prefix))return"guide"}
   if(DESIGN_ID_RE.test(base.split("_")[0]))return"design";const up=base.split("_");
   for(const s of up)if(ALL_FPID_SHORTS.has(s))return"fpid-doc";
+  if(up[0]&&EXTERNAL_FPID_RE.test(up[0])&&!ALL_FPID_SHORTS.has(up[0]))return"fpid-doc-ext";
   for(const s of up)if(ALL_FPID_FULLS.has(s))return"guide";return null
 }
 
@@ -36,6 +46,7 @@ function parseFilename(fn,cid){
   const conv=CONVENTIONS.find(c=>c.id===cid);if(!conv||!fn)return null;
   const segs=[];let ok=true;const di=fn.lastIndexOf(".");const ext=di>-1?fn.slice(di+1):"";const base=di>-1?fn.slice(0,di):fn;
   const ev=ext.toLowerCase()===conv.ext.toLowerCase();segs.push({label:"Extension",value:"."+ext,valid:ev,expected:"."+conv.ext});if(!ev)ok=false;
+  // Permit convention
   if(conv.customId){let fp=null,pi=-1;const up=base.split("_");
     for(let i=0;i<up.length&&!fp;i++)for(let j=up.length-1;j>=i;j--){const jn=up.slice(i,j+1).join("_");if(ALL_PERMIT_PREFIXES.has(jn)){fp=jn;pi=i;break}}
     if(fp){const pm=PERMITS.find(p=>p.prefix===fp);const cp=up.slice(0,pi).join("_");const iv=pm&&cp?validatePermitId(cp,pm.regex):false;
@@ -43,13 +54,35 @@ function parseFilename(fn,cid){
       segs.splice(1,0,{label:"Permit Prefix",value:fp,valid:true,expected:fp});if(!iv||!cp)ok=false
     }else{segs.unshift({label:"Custom ID",value:base,valid:false,expected:"ID_Permit-Agency-Type"});segs.splice(1,0,{label:"Permit Prefix",value:"(not found)",valid:false,expected:"e.g. Permit-SFWMD-ERP"});ok=false}
     return{segments:segs,overall:ok,convention:conv}}
+  // Guide Sign convention (fixed suffix)
+  if(conv.fixedSuffix){const sepIdx=Math.max(base.lastIndexOf("-"+conv.fixedSuffix),base.lastIndexOf("_"+conv.fixedSuffix));
+    let fpidPart="",suffixPart="";
+    if(sepIdx>-1){fpidPart=base.slice(0,sepIdx);suffixPart=base.slice(sepIdx+1)}else{fpidPart=base;suffixPart=""}
+    const fv=ALL_FPID_FULLS.has(fpidPart);segs.unshift({label:"FPID (Full)",value:fpidPart||"(missing)",valid:fv,expected:"11-digit FPID"});if(!fv)ok=false;
+    const sv=suffixPart===conv.fixedSuffix;segs.splice(1,0,{label:"Fixed Suffix",value:suffixPart||"(missing)",valid:sv,expected:conv.fixedSuffix});if(!sv)ok=false;
+    return{segments:segs,overall:ok,convention:conv}}
+  // Program Document convention (fixed prefix)
+  if(conv.fixedPrefix){const up=base.split("_");let cur=0;
+    const pf=up[cur]||"";const pv=pf===conv.fixedPrefix;segs.unshift({label:"Program Prefix",value:pf||"(missing)",valid:pv,expected:conv.fixedPrefix});if(!pv)ok=false;cur++;
+    let tp=[];while(cur<up.length){tp.push(up[cur]);cur++}const tv=tp.join("_");
+    segs.push({label:"Document Name",value:tv||"(missing)",valid:tv.length>0,expected:"PascalCase abbreviated title"});if(!tv)ok=false;
+    return{segments:segs,overall:ok,convention:conv}}
+  // External FPID convention
+  if(conv.externalFpid){const up=base.split("_");let cur=0;
+    const fp=up[cur]||"";const fv=EXTERNAL_FPID_RE.test(fp);segs.unshift({label:"External FPID",value:fp||"(missing)",valid:fv,expected:"######-# format"});if(!fv)ok=false;cur++;
+    let tp=[];while(cur<up.length){tp.push(up[cur]);cur++}const tv=tp.join("_");
+    segs.push({label:"Document Name",value:tv||"(missing)",valid:tv.length>0,expected:"PascalCase abbreviated title"});if(!tv)ok=false;
+    return{segments:segs,overall:ok,convention:conv}}
+  // Component-based conventions (FDOT prod / phased)
   if(conv.componentId){let fc=null,cs=-1;const sc=[...COMPONENTS].sort((a,b)=>b.id.length-a.id.length);
     for(const c of sc){const idx=base.indexOf(c.id);if(idx>-1){fc=c;cs=idx;break}}
     const bc=cs>0?base.slice(0,cs).replace(/-$/,""):"";const fv=ALL_FPID_FULLS.has(bc);
     segs.unshift({label:"FPID (Full)",value:bc||"(missing)",valid:fv,expected:"11-digit FPID"});if(!fv)ok=false;
     segs.splice(1,0,{label:"Deliverable ID",value:fc?fc.id:"(not found)",valid:!!fc,expected:"e.g. PLANS-01-ROADWAY"});if(!fc)ok=false;
     if(conv.submittalSuffix){const ac=fc?base.slice(cs+fc.id.length).replace(/^-/,""):"";const sv=ALL_SUFFIXES.has(ac);segs.splice(2,0,{label:"Submittal Suffix",value:ac||"(missing)",valid:sv,expected:"e.g. 90pct, Final, RFC"});if(!sv)ok=false}
+    else if(conv.revisionId){const remaining=fc?base.slice(cs+fc.id.length):"";if(remaining){const rm=remaining.match(/^-REV(\d{2})$/);if(rm){segs.splice(2,0,{label:"Revision ID",value:"REV"+rm[1],valid:true,expected:"REVnn (optional)"})}else{segs.push({label:"Unexpected",value:remaining.replace(/^-/,""),valid:false,expected:"(none or -REVnn)"});ok=false}}}
     return{segments:segs,overall:ok,convention:conv}}
+  // Standard segment-based conventions
   const up=base.split("_");let cur=0;
   if(conv.designId){const s=up[cur]||"";const m=DESIGN_ID_RE.exec(s);let d="";if(m){const pv=ALL_PROJECT_ABBRS.has(m[1]);d=pv?"Project: "+m[1]:"Unknown project: "+m[1];if(!pv)ok=false}segs.unshift({label:"Design ID",value:s||"(missing)",valid:!!m,expected:"PX-PS-0001.00",details:d});if(!m)ok=false;cur++}
   if(conv.fpidFull&&!conv.componentId){const s=up[cur]||"";const v=ALL_FPID_FULLS.has(s);segs.push({label:"FPID (Full)",value:s||"(missing)",valid:v,expected:"11-digit FPID"});if(!v)ok=false;cur++}
@@ -64,14 +97,18 @@ function parseFilename(fn,cid){
 
 function buildExpectedPattern(conv){
   if(!conv)return"";if(conv.customId)return"CustomID_Permit-Agency-Type.pdf";
-  const sep=conv.componentId?"-":"_";let p=[];
+  if(conv.fixedSuffix)return"XXXXXXXXXXX-"+conv.fixedSuffix+"."+conv.ext;
+  if(conv.fixedPrefix)return conv.fixedPrefix+"_DocName."+conv.ext;
+  if(conv.externalFpid)return"XXXXXX-X_DocName."+conv.ext;
+  const sep=conv.separator||"_";let p=[];
   if(conv.designId)p.push("PX-PS-0001.00");if(conv.fpidFull)p.push("XXXXXXXXXXX");if(conv.projectId)p.push("PX");if(conv.fpidShort)p.push("XXXXXX-X");
   if(conv.componentId)p.push("PLANS-XX-DISCIPLINE");if(conv.title)p.push("DocName");if(conv.submittalSuffix)p.push("Suffix");
+  if(conv.revisionId)p.push("(REVnn)");
   let b=p.join(sep);if(conv.formattedDate)b+="_YYYY-MM-DD";return b+"."+conv.ext
 }
 
 // ═══════ STATE ═══════
-let state={view:"main",mode:"generator",convention:"",title:"",subTitle:"",fpidShort:"",project:"",component:"",submittalPhase:"",submittalIdRaw:"",isResubmittal:false,resubmittalIdRaw:"",formattedDate:"",customIdFormat:"",customIdValue:"",valFilename:"",valConvOverride:"",valExpandedSeg:null,abbrSearch:"",convExpanded:null,acFocused:false,acHighlightIdx:-1,copied:false,patternCopied:false};
+let state={view:"main",mode:"generator",convention:"",title:"",subTitle:"",fpidShort:"",project:"",component:"",submittalPhase:"",submittalIdRaw:"",isResubmittal:false,resubmittalIdRaw:"",formattedDate:"",customIdFormat:"",customIdValue:"",externalFpidRaw:"",revisionIdRaw:"",valFilename:"",valConvOverride:"",valExpandedSeg:null,abbrSearch:"",convExpanded:null,acFocused:false,acHighlightIdx:-1,copied:false,patternCopied:false};
 
 let _restoring=false;
 function setState(patch){
@@ -151,13 +188,13 @@ function renderGenerator(){
 
   // Convention dropdown
   const convWrap=h("div",{style:{padding:"18px 24px 12px"}});
-  convWrap.append(selectEl("Convention","naming pattern",cid,v=>{setState({convention:v,title:"",subTitle:"",fpidShort:"",project:"",component:"",submittalPhase:"",submittalIdRaw:"",isResubmittal:false,resubmittalIdRaw:"",formattedDate:"",customIdFormat:"",customIdValue:""})},
+  convWrap.append(selectEl("Convention","naming pattern",cid,v=>{setState({convention:v,title:"",subTitle:"",fpidShort:"",project:"",component:"",submittalPhase:"",submittalIdRaw:"",isResubmittal:false,resubmittalIdRaw:"",formattedDate:"",customIdFormat:"",customIdValue:"",externalFpidRaw:"",revisionIdRaw:""})},
     "Choose a naming convention...",CONVENTIONS.map(c=>({value:c.id,label:c.desc}))));
   frag.append(convWrap);
 
   if(!conv)return frag;
 
-  const needs={title:conv.title,designId:conv.designId,fpidFull:conv.fpidFull,projectId:conv.projectId,fpidShort:conv.fpidShort,componentId:conv.componentId,submittalSuffix:conv.submittalSuffix,formattedDate:conv.formattedDate,customId:conv.customId};
+  const needs={title:conv.title,designId:conv.designId,fpidFull:conv.fpidFull,projectId:conv.projectId,fpidShort:conv.fpidShort,componentId:conv.componentId,submittalSuffix:conv.submittalSuffix,formattedDate:conv.formattedDate,customId:conv.customId,externalFpid:!!conv.externalFpid,revisionId:!!conv.revisionId,fixedPrefix:!!conv.fixedPrefix,fixedSuffix:!!conv.fixedSuffix};
   const needsFpid=needs.fpidFull||needs.fpidShort;
   const needsProject=needs.designId||needs.projectId;
 
@@ -185,13 +222,22 @@ function renderGenerator(){
   if(needs.customId){
     if(state.customIdFormat&&state.customIdValue&&resolvedPermit&&customIdValid!==false)
       generatedName=state.customIdValue+"_"+resolvedPermit.prefix+"."+conv.ext
+  }else if(needs.fixedSuffix&&resolvedFpidFull){
+    generatedName=resolvedFpidFull+(conv.separator||"-")+conv.fixedSuffix+"."+conv.ext
+  }else if(needs.fixedPrefix){
+    const pSegs=[conv.fixedPrefix];if(docName)pSegs.push(docName);
+    generatedName=pSegs.join(conv.separator||"_")+"."+conv.ext
+  }else if(needs.externalFpid){
+    const efpid=formatExternalFpid(state.externalFpidRaw);
+    if(efpid){const eSegs=[efpid];eSegs.push(docName||conv.exampleDoc);generatedName=eSegs.join("_")+"."+conv.ext}
   }else{
-    const sep=conv.componentId?"-":"_";const segs=[];
+    const sep=conv.separator||"_";const segs=[];
     if(needs.designId&&designIdStr)segs.push(designIdStr);
     if(needs.fpidFull&&resolvedFpidFull)segs.push(resolvedFpidFull);
     if(needs.projectId&&resolvedProjectAbbr)segs.push(resolvedProjectAbbr);
     if(needs.fpidShort&&state.fpidShort)segs.push(state.fpidShort);
-    if(needs.componentId&&resolvedComponentId)segs.push(resolvedComponentId);
+    if(needs.componentId&&resolvedComponentId){segs.push(resolvedComponentId);
+      if(needs.revisionId&&state.revisionIdRaw){const rv=formatRevisionId(state.revisionIdRaw);if(rv)segs.push(rv)}}
     if(needs.title)segs.push(docName||conv.exampleDoc);
     if(needs.submittalSuffix&&submittalSuffixStr)segs.push(submittalSuffixStr);
     let base=segs.join(sep);if(needs.formattedDate&&state.formattedDate)base+="_"+state.formattedDate;
@@ -200,15 +246,18 @@ function renderGenerator(){
 
   // Field status
   const fs={};
-  if(needs.title)fs["Title"]=!!state.title.trim();
+  if(needs.title&&!needs.fixedSuffix)fs["Title"]=!!state.title.trim();
   if(needs.designId)fs["Design ID"]=!!(resolvedProjectAbbr&&resolvedPhase.prefix&&submittalId);
-  if(needs.fpidFull)fs["FPID (Full)"]=!!resolvedFpidFull;
+  if(needs.fpidFull&&!needs.fixedSuffix)fs["FPID (Full)"]=!!resolvedFpidFull;
+  if(needs.fpidFull&&needs.fixedSuffix)fs["FPID"]=!!state.fpidShort;
   if(needs.projectId)fs["Project ID"]=!!resolvedProjectAbbr;
-  if(needs.fpidShort)fs["FPID (Short)"]=!!state.fpidShort;
+  if(needs.fpidShort&&!needs.fixedSuffix)fs["FPID (Short)"]=!!state.fpidShort;
   if(needs.componentId)fs["Deliverable"]=!!resolvedComponentId;
   if(needs.submittalSuffix)fs["Submittal Suffix"]=!!submittalSuffixStr;
   if(needs.formattedDate)fs["Formatted Date"]=!!state.formattedDate.trim();
   if(needs.customId){fs["Custom ID Format"]=!!state.customIdFormat;fs["Custom ID"]=!!(state.customIdValue&&customIdValid!==false)}
+  if(needs.externalFpid)fs["External FPID"]=!!formatExternalFpid(state.externalFpidRaw);
+  if(needs.fixedPrefix)fs["Title"]=!!state.title.trim();
   const isValid=Object.values(fs).length>0&&Object.values(fs).every(Boolean);
   const filledCount=Object.values(fs).filter(Boolean).length;
   const totalCount=Object.values(fs).length;
@@ -235,6 +284,12 @@ function renderGenerator(){
     row.append(autocompleteEl("Title","auto-abbreviated",state.title,v=>setState({title:v}),"e.g. Pavement Design Report",TITLE_SUGGESTIONS));
     row.append(inputEl("Sub-Title","optional",state.subTitle,v=>setState({subTitle:v}),"e.g. Segment 1"));
     inner.append(row)
+  }
+
+  // External FPID
+  if(needs.externalFpid){
+    const efFormatted=formatExternalFpid(state.externalFpidRaw);
+    inner.append(inputEl("External FPID",efFormatted?"\u2192 "+efFormatted:"1-7 digit number \u2192 ######-#",state.externalFpidRaw,v=>setState({externalFpidRaw:v.replace(/\D/g,"")}),"e.g. 2012103",{maxLength:"7",inputMode:"numeric"}))
   }
 
   // FPID
@@ -278,6 +333,12 @@ function renderGenerator(){
   // Deliverable
   if(needs.componentId)inner.append(selectEl("Deliverable","plan discipline",state.component,v=>setState({component:v}),"Select component...",COMPONENTS.map(c=>({value:c.name,label:c.name}))));
 
+  // Revision ID (optional, for fdot-prod)
+  if(needs.revisionId){
+    const rvFormatted=formatRevisionId(state.revisionIdRaw);
+    inner.append(inputEl("Revision ID",rvFormatted?"\u2192 "+rvFormatted:"optional, integer \u2192 REV00",state.revisionIdRaw,v=>setState({revisionIdRaw:v.replace(/\D/g,"")}),"e.g. 1",{maxLength:"2",inputMode:"numeric"}))
+  }
+
   // Submittal suffix (non-design)
   if(needs.submittalSuffix&&!needs.designId)inner.append(selectEl("Submittal Phase","suffix",state.submittalPhase,v=>setState({submittalPhase:v}),"Select phase...",SUBMITTAL_PHASES.map(s=>({value:s.desc,label:s.desc+(s.suffix&&s.suffix!=="-"?" \u2192 "+s.suffix:"")}))));
 
@@ -318,7 +379,7 @@ function renderGenerator(){
   hdrL.append(h("span",{style:{fontSize:"11px",fontWeight:"700",letterSpacing:".07em",textTransform:"uppercase",color:isValid?"#166534":generatedName?"#92400e":"#94a3b8"}},"Generated File Name"));
   if(totalCount>0)hdrL.append(h("span",{style:{fontSize:"10px",fontWeight:"600",color:isValid?"#166534":"#92400e",background:isValid?"#dcfce7":"#fef3c7",border:"1px solid "+(isValid?"#bbf7d0":"#fde68a"),borderRadius:"10px",padding:"1px 8px"}},isValid?"\u2713 Valid":filledCount+"/"+totalCount));
   const hdrR=h("div",{style:{display:"flex",gap:"6px"}});
-  hdrR.append(h("button",{className:"sm-btn",style:{color:"#64748b",background:"transparent",borderColor:"#d1d5db"},onClick:()=>setState({convention:"",title:"",subTitle:"",fpidShort:"",project:"",component:"",submittalPhase:"",submittalIdRaw:"",isResubmittal:false,resubmittalIdRaw:"",formattedDate:"",customIdFormat:"",customIdValue:"",copied:false})},"Reset"));
+  hdrR.append(h("button",{className:"sm-btn",style:{color:"#64748b",background:"transparent",borderColor:"#d1d5db"},onClick:()=>setState({convention:"",title:"",subTitle:"",fpidShort:"",project:"",component:"",submittalPhase:"",submittalIdRaw:"",isResubmittal:false,resubmittalIdRaw:"",formattedDate:"",customIdFormat:"",customIdValue:"",externalFpidRaw:"",revisionIdRaw:"",copied:false})},"Reset"));
   if(isValid&&generatedName){
     hdrR.append(h("button",{className:"sm-btn",style:{color:state.copied?"#16a34a":"#2563eb",background:state.copied?"rgba(22,163,74,.07)":"rgba(37,99,235,.07)",borderColor:state.copied?"rgba(22,163,74,.18)":"rgba(37,99,235,.18)"},onClick:()=>{navigator.clipboard.writeText(generatedName);setState({copied:true});setTimeout(()=>setState({copied:false}),1800)}},state.copied?"\u2713 Copied":"Copy"))
   }
@@ -327,7 +388,7 @@ function renderGenerator(){
   if(generatedName){
     const meta=h("div",{style:{marginTop:"6px",display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}});
     meta.append(h("span",{style:{fontSize:"10px",fontWeight:"700",letterSpacing:".06em",textTransform:"uppercase",color:"#475569",background:"#e2e8f0",borderRadius:"4px",padding:"2px 8px",display:"inline-block"}},"."+conv.ext));
-    meta.append(h("span",{style:{fontSize:"11px",color:"#64748b"}},needs.customId?"permit convention":conv.componentId?"sep: hyphen ( - )":"sep: underscore ( _ )"));
+    meta.append(h("span",{style:{fontSize:"11px",color:"#64748b"}},needs.customId?"permit convention":(conv.separator||"_")==="-"?"sep: hyphen ( - )":"sep: underscore ( _ )"));
     if(!isValid)meta.append(h("span",{style:{fontSize:"11px",color:"#b45309",fontWeight:"500"}},"\u2014 missing required fields"));
     out.append(meta)
   }
@@ -378,7 +439,7 @@ function renderValidator(){
     const nonExt=result.segments.filter(s=>s.label!=="Extension");
     nonExt.forEach((seg,i)=>{
       const color=SEG_COLORS[i%SEG_COLORS.length];
-      if(i>0)psLine.append(h("span",{style:{color:"#94a3b8",margin:"0 1px"}},activeConv?.componentId&&!activeConv?.customId?"-":"_"));
+      if(i>0)psLine.append(h("span",{style:{color:"#94a3b8",margin:"0 1px"}},(activeConv?.separator||"_")));
       psLine.append(h("span",{style:{color:seg.valid?color:"#dc2626",background:seg.valid?color+"0d":"#fef2f2",border:"1px solid "+(seg.valid?color+"30":"#fca5a5"),borderRadius:"3px",padding:"1px 4px",cursor:"pointer",textDecoration:seg.valid?"none":"wavy underline #ef4444"},title:"Click: "+seg.label,onClick:()=>setState({valExpandedSeg:state.valExpandedSeg===i?null:i})},seg.value))
     });
     const extSeg=result.segments.find(s=>s.label==="Extension");
@@ -468,17 +529,18 @@ function renderConventions(){
   hdr.append(h("p",{style:{fontSize:"13px",color:"#64748b",margin:"0"}},"Reference for the "+CONVENTIONS.length+" file naming conventions."));
   frag.append(hdr);
 
-  const boolFields=["title","designId","fpidFull","projectId","fpidShort","componentId","submittalSuffix","customId","formattedDate"];
-  const boolLabels={title:"Title",designId:"Design ID",fpidFull:"FPID (Full)",projectId:"Project ID",fpidShort:"FPID (Short)",componentId:"Deliverable",submittalSuffix:"Submittal Suffix",customId:"Custom ID",formattedDate:"Formatted Date"};
-
   const card=h("div",{className:"card"});
   CONVENTIONS.forEach((c,i)=>{
     const isOpen=state.convExpanded===c.id;
-    const activeFields=boolFields.filter(f=>c[f]);
+    const convRules=RULES_BY_CONV[c.id]||[];
+    const reqFields=convRules.filter(r=>r.required===true).map(r=>(FIELD_MAP[r.field]||{}).name||r.field);
+    const optFields=convRules.filter(r=>r.required===false).map(r=>(FIELD_MAP[r.field]||{}).name||r.field);
+    const lookupFields=convRules.filter(r=>r.required==null).map(r=>(FIELD_MAP[r.field]||{}).name||r.field);
+    const totalFields=reqFields.length+optFields.length;
     const item=h("div",{style:{borderTop:i===0?"none":"1px solid #edf0f4"}});
     const btn=h("button",{style:{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 24px",background:isOpen?"#f8fafc":"#fff",border:"none",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",textAlign:"left"},onClick:()=>setState({convExpanded:isOpen?null:c.id})});
     const btnL=h("div",{style:{flex:"1",minWidth:"0"}},h("div",{style:{fontSize:"14px",fontWeight:"600",color:"#0f172a"}},c.desc),h("div",{style:{fontSize:"11px",color:"#64748b",marginTop:"2px",lineHeight:"1.4"}},c.info));
-    const btnR=h("div",{style:{display:"flex",alignItems:"center",gap:"8px",flexShrink:"0",marginLeft:"12px"}},h("span",{style:{fontSize:"11px",color:"#64748b",fontWeight:"500"}},activeFields.length+" fields"),h("span",{style:{fontSize:"14px",color:"#94a3b8",transform:isOpen?"rotate(180deg)":"rotate(0)",transition:"transform .2s",display:"inline-block"}},"\u25BE"));
+    const btnR=h("div",{style:{display:"flex",alignItems:"center",gap:"8px",flexShrink:"0",marginLeft:"12px"}},h("span",{style:{fontSize:"11px",color:"#64748b",fontWeight:"500"}},totalFields+" fields"),h("span",{style:{fontSize:"14px",color:"#94a3b8",transform:isOpen?"rotate(180deg)":"rotate(0)",transition:"transform .2s",display:"inline-block"}},"\u25BE"));
     btn.append(btnL,btnR);item.append(btn);
 
     if(isOpen){
@@ -488,11 +550,27 @@ function renderConventions(){
           h("span",{style:{fontSize:"10px",fontWeight:"700",letterSpacing:".07em",textTransform:"uppercase",color:"#0369a1",marginRight:"6px"}},"Example"),
           h("span",{className:"mono",style:{fontSize:"11px",color:"#0c4a6e",fontWeight:"500"}},c.exampleName)))
       }
-      const rfWrap=h("div",{style:{marginBottom:"12px"}});
-      rfWrap.append(h("span",{style:{fontSize:"10px",fontWeight:"700",letterSpacing:".07em",textTransform:"uppercase",color:"#475569",display:"block",marginBottom:"6px"}},"Required Fields"));
-      const rfRow=h("div",{style:{display:"flex",flexWrap:"wrap",gap:"5px"}});
-      activeFields.forEach(f=>rfRow.append(h("span",{className:"tag"},boolLabels[f])));
-      rfWrap.append(rfRow);detail.append(rfWrap);
+      if(reqFields.length){
+        const rfWrap=h("div",{style:{marginBottom:"12px"}});
+        rfWrap.append(h("span",{style:{fontSize:"10px",fontWeight:"700",letterSpacing:".07em",textTransform:"uppercase",color:"#475569",display:"block",marginBottom:"6px"}},"Required Fields"));
+        const rfRow=h("div",{style:{display:"flex",flexWrap:"wrap",gap:"5px"}});
+        reqFields.forEach(f=>rfRow.append(h("span",{className:"tag"},f)));
+        rfWrap.append(rfRow);detail.append(rfWrap)
+      }
+      if(optFields.length){
+        const ofWrap=h("div",{style:{marginBottom:"12px"}});
+        ofWrap.append(h("span",{style:{fontSize:"10px",fontWeight:"700",letterSpacing:".07em",textTransform:"uppercase",color:"#475569",display:"block",marginBottom:"6px"}},"Optional Fields"));
+        const ofRow=h("div",{style:{display:"flex",flexWrap:"wrap",gap:"5px"}});
+        optFields.forEach(f=>ofRow.append(h("span",{className:"field-tag optional"},f)));
+        ofWrap.append(ofRow);detail.append(ofWrap)
+      }
+      if(lookupFields.length){
+        const lfWrap=h("div",{style:{marginBottom:"12px"}});
+        lfWrap.append(h("span",{style:{fontSize:"10px",fontWeight:"700",letterSpacing:".07em",textTransform:"uppercase",color:"#475569",display:"block",marginBottom:"6px"}},"Lookups"));
+        const lfRow=h("div",{style:{display:"flex",flexWrap:"wrap",gap:"5px"}});
+        lookupFields.forEach(f=>lfRow.append(h("span",{style:{fontSize:"10px",fontWeight:"500",color:"#64748b",background:"#f1f5f9",border:"1px solid #e2e8f0",borderRadius:"4px",padding:"2px 8px",display:"inline-block"}},f)));
+        lfWrap.append(lfRow);detail.append(lfWrap)
+      }
 
       // Pattern
       const patWrap=h("div",{style:{marginBottom:"12px"}});
@@ -501,7 +579,7 @@ function renderConventions(){
       detail.append(patWrap);
 
       detail.append(h("div",{style:{display:"flex",gap:"16px",fontSize:"11px",color:"#64748b",flexWrap:"wrap"}},
-        h("span",null,"Separator: ",h("strong",{style:{color:"#334155"}},c.customId||!c.componentId?"underscore ( _ )":"hyphen ( - )")),
+        h("span",null,"Separator: ",h("strong",{style:{color:"#334155"}},(c.separator||"_")==="-"?"hyphen ( - )":"underscore ( _ )")),
         h("span",null,"Extension: ",h("strong",{style:{color:"#334155"}},"."+c.ext))));
       item.append(detail)
     }
