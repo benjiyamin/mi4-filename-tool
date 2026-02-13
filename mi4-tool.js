@@ -4,15 +4,54 @@ const ALL_PROJECT_ABBRS=new Set(PROJECTS.map(p=>p.abbr));
 const ALL_FPID_SHORTS=new Set(FPIDS.map(f=>f.fpid));
 const ALL_COMPONENT_IDS=new Set(COMPONENTS.map(c=>c.id));
 const ALL_SUFFIXES=new Set(SUBMITTAL_PHASES.map(s=>s.suffix).filter(s=>s&&s!=="-"));
-const ALL_PERMIT_PREFIXES=new Set(PERMITS.map(p=>p.prefix));
 const ALL_PERMIT_CODES=new Set(PERMITS.map(p=>p.code));
 const FIELD_MAP=Object.fromEntries(FIELDS.map(f=>[f.id,f]));
 const RULES_BY_CONV={};for(const r of RULES){if(!RULES_BY_CONV[r.convention])RULES_BY_CONV[r.convention]=[];RULES_BY_CONV[r.convention].push(r)}
-const DESIGN_ID_RE=/^(P[A-Z0-9]+)-(PS|FS|RC|PD|SD|CS|CR|FCR|RFI|RFM)-(\d{4})\.(\d{2})$/;
+const ALL_SUBMITTAL_PREFIXES=new Set(SUBMITTAL_PHASES.map(s=>s.prefix).filter(Boolean));
 const DATE_RE=/^\d{4}-\d{2}-\d{2}$/;
 const EXTERNAL_FPID_RE=/^\d{6}-\d$/;
 const SEG_COLORS=["#7c3aed","#0891b2","#059669","#ca8a04","#dc2626","#2563eb","#9333ea","#e11d48"];
-const SEG_EXPLAIN={"Extension":"The file extension must match the convention (.pdf, .kmz).","FPID (Full)":"An 11-digit code identifying the Financial Project ID.","FPID (Short)":"The standard FPID format (######-#) used in FDOT project tracking.","Project ID":"A short abbreviation (P1\u2013P5, PA, PB) mapped from the project name.","Deliverable ID":"A structured identifier for the plan discipline, e.g. PLANS-01-ROADWAY.","Submittal Suffix":"Indicates the submittal phase: 15pct, 30pct, 60pct, 90pct, Final, or RFC.","Design ID":"Format: ProjectAbbr-PhasePrefix-SubmittalID.ResubmittalID (e.g. P3-PS-0001.00).","Document Name":"The document title, PascalCased and abbreviated per the abbreviation table.","Formatted Date":"Date in YYYY-MM-DD format.","Custom ID":"The permit number matching the selected permit type's format.","Permit Prefix":"A standard prefix identifying the permit agency and type.","External FPID":"A non-MI4 Financial Project ID in ######-# format.","Revision ID":"Revision number in REVnn format (e.g. REV01).","Program Prefix":"The fixed prefix \u2018MI4\u2019 identifying program-level documents.","Fixed Suffix":"The fixed suffix \u2018GuideSignWorksheets\u2019 for guide sign deliverables.","Unexpected":"Extra segments that don't belong in this convention's pattern."};
+const SEG_EXPLAIN={"Extension":"The file extension must match the convention (.pdf, .kmz).","FPID (Full)":"An 11-digit code identifying the Financial Project ID.","FPID (Short)":"The standard FPID format (######-#) used in FDOT project tracking.","Project ID":"A short abbreviation (P1\u2013P5, PA, PB) mapped from the project name.","Deliverable ID":"A structured identifier for the plan discipline, e.g. PLANS-01-ROADWAY.","Submittal Suffix":"Indicates the submittal phase: 15pct, 30pct, 60pct, 90pct, Final, or RFC.","Submittal Prefix":"The phase prefix (PS, FS, RC, etc.) identifying the submittal stage.","Submittal ID":"A 4-digit sequential number identifying the submittal (e.g. 0001).","Resubmittal ID":"A 2-digit resubmittal number (e.g. 00 for original, 01 for first resubmittal).","Document Name":"The document title, PascalCased and abbreviated per the abbreviation table.","Document Name (Sub)":"An optional sub-title appended to the document name with a hyphen.","Formatted Date":"Date in YYYY-MM-DD format.","Custom ID":"The permit number matching the selected permit type's format.","Permit Code":"The permit agency and type code (e.g. SFWMD-ERP, USACE-404).","External FPID":"A non-MI4 Financial Project ID in ######-# format.","Revision ID":"Revision number in REVnn format (e.g. REV01).","Program Prefix":"The fixed prefix \u2018MI4\u2019 identifying program-level documents.","Fixed Suffix":"The fixed suffix \u2018GuideSignWorksheets\u2019 for guide sign deliverables.","Unexpected":"Extra segments that don't belong in this convention's pattern."};
+
+// Format string tokenizer: parses "{field}" "[" "]" and literal text
+function tokenizeFormat(fmt){
+  const tokens=[];let i=0;
+  while(i<fmt.length){
+    if(fmt[i]==="["){tokens.push({type:"opt_start"});i++;continue}
+    if(fmt[i]==="]"){tokens.push({type:"opt_end"});i++;continue}
+    if(fmt[i]==="{"){const end=fmt.indexOf("}",i);if(end===-1)break;tokens.push({type:"field",id:fmt.slice(i+1,end)});i=end+1;continue}
+    let lit="";while(i<fmt.length&&fmt[i]!=="{"&&fmt[i]!=="["&&fmt[i]!=="]"){lit+=fmt[i];i++}
+    if(lit)tokens.push({type:"literal",value:lit})
+  }
+  return tokens
+}
+
+const FIELD_VALIDATORS={
+  projectId:{set:ALL_PROJECT_ABBRS,label:"Project ID"},
+  fpid:{set:ALL_FPID_SHORTS,label:"FPID (Short)"},
+  fullFpid:{set:ALL_FPID_FULLS,label:"FPID (Full)"},
+  deliverableId:{set:ALL_COMPONENT_IDS,label:"Deliverable ID",longestFirst:true},
+  phaseId:{set:ALL_SUFFIXES,label:"Submittal Suffix"},
+  permitCode:{set:ALL_PERMIT_CODES,label:"Permit Code"},
+  submittalPrefix:{set:ALL_SUBMITTAL_PREFIXES,label:"Submittal Prefix"},
+  submittalId:{regex:/^\d{4}$/,label:"Submittal ID"},
+  resubmittalId:{regex:/^\d{2}$/,label:"Resubmittal ID"},
+  revisionId:{regex:/^REV\d{2}$/,label:"Revision ID"},
+  externalFpid:{regex:EXTERNAL_FPID_RE,label:"External FPID"},
+  date:{regex:DATE_RE,label:"Formatted Date"},
+  title:{greedy:true,label:"Document Name"},
+  subtitle:{greedy:true,label:"Document Name (Sub)"},
+  permitId:{greedy:true,label:"Custom ID",postValidate:true}
+};
+
+const FIELD_PLACEHOLDERS={
+  projectId:"PX",fpid:"XXXXXX-X",fullFpid:"XXXXXXXXXXX",
+  deliverableId:"PLANS-XX-DISCIPLINE",phaseId:"Suffix",
+  permitCode:"Agency-Type",submittalPrefix:"PS",
+  submittalId:"0000",resubmittalId:"00",revisionId:"REVnn",
+  externalFpid:"XXXXXX-X",date:"YYYY-MM-DD",
+  title:"DocName",subtitle:"SubName",permitId:"CustomID"
+};
 
 function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
 
@@ -28,83 +67,250 @@ function validatePermitId(v,rx){if(!v||!rx)return false;try{return new RegExp(rx
 function formatExternalFpid(v){const n=parseInt(v,10);if(isNaN(n)||n<0)return"";const s=String(n).padStart(7,"0");return s.slice(0,6)+"-"+s.slice(6)}
 function formatRevisionId(v){const n=parseInt(v,10);if(isNaN(n)||n<=0)return"";return"REV"+String(n).padStart(2,"0")}
 
+// Detection order: most specific conventions first
+const _DETECT_ORDER=["kmz","guide","permit","fdot-prod-ph","fdot-prod","design","fpid-doc","fpid-doc-ext","program-doc"];
 function detectConvention(fn){
-  if(!fn)return null;if(fn.toLowerCase().endsWith(".kmz"))return"kmz";
-  const base=fn.replace(/\.[^.]+$/,"");
-  if(base.startsWith("MI4_"))return"program-doc";
-  for(const p of PERMITS)if(fn.includes(p.prefix))return"permit";
-  const sc=[...COMPONENTS].sort((a,b)=>b.id.length-a.id.length);
-  for(const c of sc){if(base.includes(c.id)){const af=base.split(c.id)[1]||"";const tp=af.replace(/^-/,"").split("-").filter(Boolean);for(const t of tp)if(ALL_SUFFIXES.has(t))return"fdot-prod-ph";return"fdot-prod"}}
-  if(base.endsWith("-GuideSignWorksheets")||base.endsWith("_GuideSignWorksheets")){const prefix=base.replace(/[-_]GuideSignWorksheets$/,"");if(ALL_FPID_FULLS.has(prefix))return"guide"}
-  if(DESIGN_ID_RE.test(base.split("_")[0]))return"design";const up=base.split("_");
-  for(const s of up)if(ALL_FPID_SHORTS.has(s))return"fpid-doc";
-  if(up[0]&&EXTERNAL_FPID_RE.test(up[0])&&!ALL_FPID_SHORTS.has(up[0]))return"fpid-doc-ext";
-  for(const s of up)if(ALL_FPID_FULLS.has(s))return"guide";return null
+  if(!fn)return null;
+  // Quick extension check
+  if(fn.toLowerCase().endsWith(".kmz"))return"kmz";
+  // Trial-parse against each convention in specificity order
+  let best=null,bestScore=-1;
+  for(const cid of _DETECT_ORDER){
+    const result=parseFilename(fn,cid);
+    if(!result)continue;
+    const total=result.segments.length;const valid=result.segments.filter(s=>s.valid).length;
+    if(result.overall&&valid>bestScore){best=cid;bestScore=valid;break}
+    if(valid>bestScore){best=cid;bestScore=valid}
+  }
+  return best
+}
+
+// Generic format-driven parser: matches a filename against a convention's format string
+function _matchField(fid,str,pos){
+  const v=FIELD_VALIDATORS[fid];if(!v)return null;
+  if(v.set){
+    if(v.longestFirst){const sorted=[...v.set].sort((a,b)=>b.length-a.length);for(const val of sorted)if(str.startsWith(val,pos))return{value:val,len:val.length}}
+    else{for(const val of v.set)if(str.startsWith(val,pos))return{value:val,len:val.length}}
+    return null
+  }
+  if(v.regex){const sub=str.slice(pos);const m=sub.match(v.regex);if(m&&sub.indexOf(m[0])===0)return{value:m[0],len:m[0].length};return null}
+  return null
+}
+
+// Flatten format tokens into a linear sequence with optional group markers resolved
+function _flattenTokens(tokens){
+  const flat=[];let inOpt=false;
+  for(const t of tokens){
+    if(t.type==="opt_start"){inOpt=true;continue}
+    if(t.type==="opt_end"){inOpt=false;continue}
+    flat.push({...t,optional:inOpt})
+  }
+  return flat
+}
+
+// Find the position of the next non-greedy anchor after index i in flat tokens
+function _findNextAnchor(flat,i,str,searchFrom){
+  for(let j=i+1;j<flat.length;j++){
+    const t=flat[j];
+    if(t.type==="literal"){const idx=str.indexOf(t.value,searchFrom);if(idx>=searchFrom)return{pos:idx,tokenIdx:j};return null}
+    if(t.type==="field"&&!FIELD_VALIDATORS[t.id]?.greedy){
+      // Try to find where this field could start by scanning from searchFrom
+      for(let p=searchFrom;p<str.length;p++){const m=_matchField(t.id,str,p);if(m)return{pos:p,tokenIdx:j}}
+      return null
+    }
+  }
+  return null
 }
 
 function parseFilename(fn,cid){
-  const conv=CONVENTIONS.find(c=>c.id===cid);if(!conv||!fn)return null;
-  const segs=[];let ok=true;const di=fn.lastIndexOf(".");const ext=di>-1?fn.slice(di+1):"";const base=di>-1?fn.slice(0,di):fn;
-  const ev=ext.toLowerCase()===conv.ext.toLowerCase();segs.push({label:"Extension",value:"."+ext,valid:ev,expected:"."+conv.ext});if(!ev)ok=false;
-  // Permit convention
-  if(conv.customId){let fp=null,pi=-1;const up=base.split("_");
-    for(let i=0;i<up.length&&!fp;i++)for(let j=up.length-1;j>=i;j--){const jn=up.slice(i,j+1).join("_");if(ALL_PERMIT_PREFIXES.has(jn)){fp=jn;pi=i;break}}
-    if(fp){const pm=PERMITS.find(p=>p.prefix===fp);const cp=up.slice(0,pi).join("_");const iv=pm&&cp?validatePermitId(cp,pm.regex):false;
-      segs.unshift({label:"Custom ID",value:cp||"(missing)",valid:iv&&!!cp,expected:pm?"Format: "+pm.hint+" (e.g. "+pm.example+")":"Unknown"});
-      segs.splice(1,0,{label:"Permit Prefix",value:fp,valid:true,expected:fp});if(!iv||!cp)ok=false
-    }else{segs.unshift({label:"Custom ID",value:base,valid:false,expected:"ID_Permit-Agency-Type"});segs.splice(1,0,{label:"Permit Prefix",value:"(not found)",valid:false,expected:"e.g. Permit-SFWMD-ERP"});ok=false}
-    return{segments:segs,overall:ok,convention:conv}}
-  // Guide Sign convention (fixed suffix)
-  if(conv.fixedSuffix){const sepIdx=Math.max(base.lastIndexOf("-"+conv.fixedSuffix),base.lastIndexOf("_"+conv.fixedSuffix));
-    let fpidPart="",suffixPart="";
-    if(sepIdx>-1){fpidPart=base.slice(0,sepIdx);suffixPart=base.slice(sepIdx+1)}else{fpidPart=base;suffixPart=""}
-    const fv=ALL_FPID_FULLS.has(fpidPart);segs.unshift({label:"FPID (Full)",value:fpidPart||"(missing)",valid:fv,expected:"11-digit FPID"});if(!fv)ok=false;
-    const sv=suffixPart===conv.fixedSuffix;segs.splice(1,0,{label:"Fixed Suffix",value:suffixPart||"(missing)",valid:sv,expected:conv.fixedSuffix});if(!sv)ok=false;
-    return{segments:segs,overall:ok,convention:conv}}
-  // Program Document convention (fixed prefix)
-  if(conv.fixedPrefix){const up=base.split("_");let cur=0;
-    const pf=up[cur]||"";const pv=pf===conv.fixedPrefix;segs.unshift({label:"Program Prefix",value:pf||"(missing)",valid:pv,expected:conv.fixedPrefix});if(!pv)ok=false;cur++;
-    let tp=[];while(cur<up.length){tp.push(up[cur]);cur++}const tv=tp.join("_");
-    segs.push({label:"Document Name",value:tv||"(missing)",valid:tv.length>0,expected:"PascalCase abbreviated title"});if(!tv)ok=false;
-    return{segments:segs,overall:ok,convention:conv}}
-  // External FPID convention
-  if(conv.externalFpid){const up=base.split("_");let cur=0;
-    const fp=up[cur]||"";const fv=EXTERNAL_FPID_RE.test(fp);segs.unshift({label:"External FPID",value:fp||"(missing)",valid:fv,expected:"######-# format"});if(!fv)ok=false;cur++;
-    let tp=[];while(cur<up.length){tp.push(up[cur]);cur++}const tv=tp.join("_");
-    segs.push({label:"Document Name",value:tv||"(missing)",valid:tv.length>0,expected:"PascalCase abbreviated title"});if(!tv)ok=false;
-    return{segments:segs,overall:ok,convention:conv}}
-  // Component-based conventions (FDOT prod / phased)
-  if(conv.componentId){let fc=null,cs=-1;const sc=[...COMPONENTS].sort((a,b)=>b.id.length-a.id.length);
-    for(const c of sc){const idx=base.indexOf(c.id);if(idx>-1){fc=c;cs=idx;break}}
-    const bc=cs>0?base.slice(0,cs).replace(/-$/,""):"";const fv=ALL_FPID_FULLS.has(bc);
-    segs.unshift({label:"FPID (Full)",value:bc||"(missing)",valid:fv,expected:"11-digit FPID"});if(!fv)ok=false;
-    segs.splice(1,0,{label:"Deliverable ID",value:fc?fc.id:"(not found)",valid:!!fc,expected:"e.g. PLANS-01-ROADWAY"});if(!fc)ok=false;
-    if(conv.submittalSuffix){const ac=fc?base.slice(cs+fc.id.length).replace(/^-/,""):"";const sv=ALL_SUFFIXES.has(ac);segs.splice(2,0,{label:"Submittal Suffix",value:ac||"(missing)",valid:sv,expected:"e.g. 90pct, Final, RFC"});if(!sv)ok=false}
-    else if(conv.revisionId){const remaining=fc?base.slice(cs+fc.id.length):"";if(remaining){const rm=remaining.match(/^-REV(\d{2})$/);if(rm){segs.splice(2,0,{label:"Revision ID",value:"REV"+rm[1],valid:true,expected:"REVnn (optional)"})}else{segs.push({label:"Unexpected",value:remaining.replace(/^-/,""),valid:false,expected:"(none or -REVnn)"});ok=false}}}
-    return{segments:segs,overall:ok,convention:conv}}
-  // Standard segment-based conventions
-  const up=base.split("_");let cur=0;
-  if(conv.designId){const s=up[cur]||"";const m=DESIGN_ID_RE.exec(s);let d="";if(m){const pv=ALL_PROJECT_ABBRS.has(m[1]);d=pv?"Project: "+m[1]:"Unknown project: "+m[1];if(!pv)ok=false}segs.unshift({label:"Design ID",value:s||"(missing)",valid:!!m,expected:"PX-PS-0001.00",details:d});if(!m)ok=false;cur++}
-  if(conv.fpidFull&&!conv.componentId){const s=up[cur]||"";const v=ALL_FPID_FULLS.has(s);segs.push({label:"FPID (Full)",value:s||"(missing)",valid:v,expected:"11-digit FPID"});if(!v)ok=false;cur++}
-  if(conv.projectId){const s=up[cur]||"";const v=ALL_PROJECT_ABBRS.has(s);segs.push({label:"Project ID",value:s||"(missing)",valid:v,expected:"e.g. P1, P3, PA"});if(!v)ok=false;cur++}
-  if(conv.fpidShort){const s=up[cur]||"";const v=ALL_FPID_SHORTS.has(s);segs.push({label:"FPID (Short)",value:s||"(missing)",valid:v,expected:"e.g. 201210-9"});if(!v)ok=false;cur++}
-  if(conv.title){let tp=[];while(cur<up.length){if(conv.formattedDate&&DATE_RE.test(up[cur]))break;tp.push(up[cur]);cur++}const tv=tp.join("_");segs.push({label:"Document Name",value:tv||"(missing)",valid:tv.length>0,expected:"PascalCase abbreviated title"});if(!tv)ok=false}
-  if(conv.submittalSuffix&&!conv.componentId){const s=up[cur]||"";const v=ALL_SUFFIXES.has(s);segs.push({label:"Submittal Suffix",value:s||"(missing)",valid:v,expected:"e.g. 90pct, Final, RFC"});if(!v)ok=false;cur++}
-  if(conv.formattedDate){const s=up[cur]||"";const v=DATE_RE.test(s);segs.push({label:"Formatted Date",value:s||"(missing)",valid:v,expected:"YYYY-MM-DD"});if(!v)ok=false;cur++}
-  if(cur<up.length){segs.push({label:"Unexpected",value:up.slice(cur).join("_"),valid:false,expected:"(none)"});ok=false}
-  return{segments:segs,overall:ok,convention:conv}
+  const conv=CONVENTIONS.find(c=>c.id===cid);if(!conv||!fn||!conv.format)return null;
+  const segs=[];let ok=true;
+  const di=fn.lastIndexOf(".");const ext=di>-1?fn.slice(di+1):"";const base=di>-1?fn.slice(0,di):fn;
+  const ev=ext.toLowerCase()===conv.ext.toLowerCase();
+  segs.push({label:"Extension",value:"."+ext,valid:ev,expected:"."+conv.ext});if(!ev)ok=false;
+
+  const tokens=tokenizeFormat(conv.format);
+  const flat=_flattenTokens(tokens);
+  let pos=0;const parsed={};let optGroupActive=[];let inOpt=false;let optStart=-1;
+
+  // Walk through tokens tracking optional groups from original tokens
+  const groups=[];let gIdx=-1;
+  for(let ti=0;ti<tokens.length;ti++){
+    if(tokens[ti].type==="opt_start"){gIdx=groups.length;groups.push({start:ti,tokens:[],flatStart:-1,flatEnd:-1})}
+    else if(tokens[ti].type==="opt_end"&&gIdx>=0){gIdx=-1}
+    else if(gIdx>=0){groups[gIdx].tokens.push(tokens[ti])}
+  }
+
+  // Try parsing with optional groups included, then without if needed
+  function tryParse(str,flatTokens){
+    let p=0;const result=[];const vals={};let allOk=true;
+    for(let i=0;i<flatTokens.length;i++){
+      const t=flatTokens[i];
+      if(t.type==="literal"){
+        if(str.startsWith(t.value,p)){
+          // Literals that are meaningful get a segment (fixed prefix/suffix)
+          const isFixedText=t.value.length>1&&!/^[_.\-]$/.test(t.value);
+          if(isFixedText){
+            const lbl=t.value==="GuideSignWorksheets"?"Fixed Suffix":t.value==="MI4"?"Program Prefix":"Literal";
+            result.push({label:lbl,value:t.value,valid:true,expected:t.value})
+          }
+          p+=t.value.length
+        }else{
+          if(t.optional)return null; // optional group failed
+          const isFixedText=t.value.length>1&&!/^[_.\-]$/.test(t.value);
+          if(isFixedText){result.push({label:"Literal",value:"(missing)",valid:false,expected:t.value})}
+          allOk=false;break
+        }
+      }else if(t.type==="field"){
+        const v=FIELD_VALIDATORS[t.id];if(!v){p++;continue}
+        const lbl=v.label||t.id;const expected=FIELD_PLACEHOLDERS[t.id]||t.id;
+
+        if(v.greedy){
+          // Find next non-optional anchor to determine boundary
+          let boundary=str.length;
+          for(let j=i+1;j<flatTokens.length;j++){
+            const nt=flatTokens[j];
+            if(nt.optional)continue;
+            if(nt.type==="literal"){const li=str.lastIndexOf(nt.value,str.length);
+              // Scan from right for the correct boundary
+              let found=-1;
+              for(let k=p;k<str.length;k++){
+                if(str.startsWith(nt.value,k)){
+                  // Check if remaining tokens after this literal can match
+                  found=k;
+                  // For greedy: use the first occurrence after current pos
+                  break
+                }
+              }
+              if(found>=p)boundary=found;
+              break
+            }
+            if(nt.type==="field"&&!FIELD_VALIDATORS[nt.id]?.greedy){
+              // Scan backwards from end to find where this field starts
+              for(let k=str.length-1;k>=p;k--){
+                const m=_matchField(nt.id,str,k);
+                if(m){boundary=k;break}
+              }
+              // Also check for separator before this field
+              if(i+1<flatTokens.length&&flatTokens[i+1].type==="literal"&&!flatTokens[i+1].optional){
+                const sep=flatTokens[i+1].value;
+                const li=str.indexOf(sep,p);
+                if(li>=p)boundary=li
+              }
+              break
+            }
+          }
+          const val=str.slice(p,boundary);
+          // Handle title[-subtitle] pattern: if this is title and next optional group has subtitle
+          vals[t.id]=val;
+          const valid=val.length>0;
+          result.push({label:lbl,value:val||"(missing)",valid,expected:"PascalCase abbreviated title"});
+          if(!valid)allOk=false;
+          p=boundary
+        }else if(v.set){
+          const m=_matchField(t.id,str,p);
+          if(m){
+            vals[t.id]=m.value;
+            result.push({label:lbl,value:m.value,valid:true,expected});
+            p+=m.len
+          }else{
+            if(t.optional)return null; // optional group failed
+            // Extract what's at this position for error reporting
+            let errVal="(missing)";
+            // Try to grab text until next separator
+            const nextSep=str.slice(p).search(/[_.\-]/);
+            if(nextSep>0)errVal=str.slice(p,p+nextSep);
+            else if(p<str.length)errVal=str.slice(p);
+            result.push({label:lbl,value:errVal,valid:false,expected});
+            allOk=false;
+            if(nextSep>0)p+=nextSep;else break
+          }
+        }else if(v.regex){
+          const m=_matchField(t.id,str,p);
+          if(m){
+            vals[t.id]=m.value;
+            result.push({label:lbl,value:m.value,valid:true,expected});
+            p+=m.len
+          }else{
+            if(t.optional)return null; // optional group failed
+            let errVal="(missing)";
+            const nextSep=str.slice(p).search(/[_.\-]/);
+            if(nextSep>0)errVal=str.slice(p,p+nextSep);
+            else if(p<str.length)errVal=str.slice(p);
+            result.push({label:lbl,value:errVal,valid:false,expected});
+            allOk=false;
+            if(nextSep>0)p+=nextSep;else break
+          }
+        }
+      }
+    }
+    // Check for unexpected trailing content
+    if(p<str.length){
+      result.push({label:"Unexpected",value:str.slice(p),valid:false,expected:"(none)"});
+      allOk=false
+    }
+    return{segs:result,ok:allOk,vals,pos:p}
+  }
+
+  // Build flat tokens, trying optional groups included first, then excluded
+  function buildAndParse(str){
+    // Identify optional groups in token stream
+    const optGroups=[];let depth=0;let gStart=-1;
+    for(let i=0;i<tokens.length;i++){
+      if(tokens[i].type==="opt_start"){if(depth===0)gStart=i;depth++}
+      else if(tokens[i].type==="opt_end"){depth--;if(depth===0&&gStart>=0){optGroups.push({start:gStart,end:i});gStart=-1}}
+    }
+    // Try with all optional groups included
+    const allFlat=_flattenTokens(tokens);
+    const withAll=tryParse(str,allFlat);
+    if(withAll&&withAll.ok)return withAll;
+    // Try removing optional groups one at a time (from right to left)
+    if(optGroups.length>0){
+      for(let mask=0;mask<(1<<optGroups.length);mask++){
+        const filtered=[];
+        for(let i=0;i<tokens.length;i++){
+          let skip=false;
+          for(let g=0;g<optGroups.length;g++){
+            if((mask>>g)&1){if(i>=optGroups[g].start&&i<=optGroups[g].end){skip=true;break}}
+          }
+          if(!skip)filtered.push(tokens[i])
+        }
+        const flat=_flattenTokens(filtered);
+        const res=tryParse(str,flat);
+        if(res&&res.ok)return res
+      }
+    }
+    // Return best effort (with all groups)
+    return withAll||{segs:[],ok:false,vals:{},pos:0}
+  }
+
+  const result=buildAndParse(base);
+  // Post-parse: validate permitId against matched permitCode
+  if(result.vals.permitId&&result.vals.permitCode){
+    const pm=PERMITS.find(p=>p.code===result.vals.permitCode);
+    const pidSeg=result.segs.find(s=>s.label==="Custom ID");
+    if(pidSeg&&pm){
+      const valid=validatePermitId(result.vals.permitId,pm.regex);
+      pidSeg.valid=valid;
+      pidSeg.expected=pm?"Format: "+pm.hint+" (e.g. "+pm.example+")":"Unknown";
+      if(!valid)result.ok=false
+    }
+  }
+  // Merge segments: parsed fields first, then extension
+  const finalSegs=[...result.segs,...segs];
+  return{segments:finalSegs,overall:result.ok&&ok,convention:conv}
 }
 
 function buildExpectedPattern(conv){
-  if(!conv)return"";if(conv.customId)return"CustomID_Permit-Agency-Type.pdf";
-  if(conv.fixedSuffix)return"XXXXXXXXXXX-"+conv.fixedSuffix+"."+conv.ext;
-  if(conv.fixedPrefix)return conv.fixedPrefix+"_DocName."+conv.ext;
-  if(conv.externalFpid)return"XXXXXX-X_DocName."+conv.ext;
-  const sep=conv.separator||"_";let p=[];
-  if(conv.designId)p.push("PX-PS-0001.00");if(conv.fpidFull)p.push("XXXXXXXXXXX");if(conv.projectId)p.push("PX");if(conv.fpidShort)p.push("XXXXXX-X");
-  if(conv.componentId)p.push("PLANS-XX-DISCIPLINE");if(conv.title)p.push("DocName");if(conv.submittalSuffix)p.push("Suffix");
-  if(conv.revisionId)p.push("(REVnn)");
-  let b=p.join(sep);if(conv.formattedDate)b+="_YYYY-MM-DD";return b+"."+conv.ext
+  if(!conv||!conv.format)return"";
+  const tokens=tokenizeFormat(conv.format);let out="";let inOpt=false;
+  for(const t of tokens){
+    if(t.type==="opt_start"){inOpt=true;out+="(";continue}
+    if(t.type==="opt_end"){inOpt=false;out+=")";continue}
+    if(t.type==="literal"){out+=t.value;continue}
+    if(t.type==="field"){out+=FIELD_PLACEHOLDERS[t.id]||t.id}
+  }
+  return out+"."+conv.ext
 }
 
 // ═══════ STATE ═══════
@@ -180,6 +386,52 @@ function fieldTag(label,filled){
 }
 
 // ═══════ GENERATOR ═══════
+// Resolve a format field ID to its output value from current state
+function _resolveField(fid,st){
+  const fd=FIELD_MAP[fid];if(!fd)return"";
+  if(fd.type==="lookup"){
+    const src=fd.source==="FPIDS"?FPIDS:fd.source==="PROJECTS"?PROJECTS:fd.source==="COMPONENTS"?COMPONENTS:fd.source==="SUBMITTAL_PHASES"?SUBMITTAL_PHASES:fd.source==="PERMITS"?PERMITS:[];
+    const viaVal=_resolveField(fd.via,st);if(!viaVal)return"";
+    const rec=src.find(r=>r[fd.sourceKey]===viaVal);
+    return rec?String(rec[fd.returns]||""):""
+  }
+  // Map field IDs to state keys
+  if(fid==="title")return applyAbbreviations(st.title||"");
+  if(fid==="subtitle")return applyAbbreviations(st.subTitle||"");
+  if(fid==="fpid")return st.fpidShort||"";
+  if(fid==="project")return st.project||"";
+  if(fid==="deliverable")return st.component||"";
+  if(fid==="permit")return st.customIdFormat||"";
+  if(fid==="permitId")return st.customIdValue||"";
+  if(fid==="submittal")return st.submittalPhase||"";
+  if(fid==="submittalId")return padId(st.submittalIdRaw,4);
+  if(fid==="resubmittalId")return st.isResubmittal?padId(st.resubmittalIdRaw,2):"00";
+  if(fid==="revisionId")return formatRevisionId(st.revisionIdRaw);
+  if(fid==="externalFpid")return formatExternalFpid(st.externalFpidRaw);
+  if(fid==="date")return st.formattedDate||"";
+  return""
+}
+
+// Generate filename from format string and current state
+function generateFilename(conv,st){
+  if(!conv||!conv.format)return"";
+  const tokens=tokenizeFormat(conv.format);let out="";let inOpt=false;let optBuf="";let optField="";
+  for(const t of tokens){
+    if(t.type==="opt_start"){inOpt=true;optBuf="";optField="";continue}
+    if(t.type==="opt_end"){
+      if(optField&&_resolveField(optField,st))out+=optBuf;
+      inOpt=false;continue
+    }
+    if(t.type==="literal"){if(inOpt)optBuf+=t.value;else out+=t.value;continue}
+    if(t.type==="field"){
+      const val=_resolveField(t.id,st);
+      if(inOpt){optField=t.id;optBuf+=val}
+      else{if(!val)return"";out+=val}
+    }
+  }
+  return out?out+"."+conv.ext:""
+}
+
 let _prevConvention="";
 function renderGenerator(){
   const {convention:cid}=state;const conv=CONVENTIONS.find(c=>c.id===cid)||null;
@@ -194,73 +446,44 @@ function renderGenerator(){
 
   if(!conv)return frag;
 
-  const needs={title:conv.title,designId:conv.designId,fpidFull:conv.fpidFull,projectId:conv.projectId,fpidShort:conv.fpidShort,componentId:conv.componentId,submittalSuffix:conv.submittalSuffix,formattedDate:conv.formattedDate,customId:conv.customId,externalFpid:!!conv.externalFpid,revisionId:!!conv.revisionId,fixedPrefix:!!conv.fixedPrefix,fixedSuffix:!!conv.fixedSuffix};
-  const needsFpid=needs.fpidFull||needs.fpidShort;
-  const needsProject=needs.designId||needs.projectId;
+  // Derive field requirements from RULES
+  const convRules=RULES_BY_CONV[cid]||[];
+  const ruleMap={};for(const r of convRules)ruleMap[r.field]={required:r.required};
+  const hasField=fid=>fid in ruleMap;
+  const hasFpid=hasField("fpid");
+  const hasProject=hasField("project");
+  const hasFullFpid=hasField("fullFpid");
 
-  // Resolve values
-  let resolvedProjectAbbr="";
-  if(state.fpidShort){const f=FPIDS.find(fp=>fp.fpid===state.fpidShort);if(f){const p=PROJECTS.find(pr=>pr.name===f.project);resolvedProjectAbbr=p?p.abbr:""}}
-  else if(state.project){const p=PROJECTS.find(pr=>pr.name===state.project);resolvedProjectAbbr=p?p.abbr:""}
-  const resolvedFpidFull=(()=>{const f=FPIDS.find(fp=>fp.fpid===state.fpidShort);return f?f.full:""})();
-  const resolvedComponentId=(()=>{const c=COMPONENTS.find(co=>co.name===state.component);return c?c.id:""})();
-  const resolvedPhase=SUBMITTAL_PHASES.find(s=>s.desc===state.submittalPhase)||{prefix:"",suffix:""};
+  // Resolve values for field status and filename generation
   const resolvedPermit=PERMITS.find(p=>p.name===state.customIdFormat)||null;
-  const submittalId=padId(state.submittalIdRaw,4);
-  const resubmittalId=state.isResubmittal?padId(state.resubmittalIdRaw,2):"00";
-  const customIdValid=needs.customId&&state.customIdFormat&&state.customIdValue&&resolvedPermit?validatePermitId(state.customIdValue,resolvedPermit.regex):null;
+  const customIdValid=hasField("permitId")&&state.customIdFormat&&state.customIdValue&&resolvedPermit?validatePermitId(state.customIdValue,resolvedPermit.regex):null;
 
-  let docName="";
-  if(state.title)docName=applyAbbreviations(state.title);
-  if(state.subTitle)docName+=(docName?"-":"")+applyAbbreviations(state.subTitle);
-
-  const designIdStr=needs.designId&&resolvedProjectAbbr&&resolvedPhase.prefix&&submittalId?resolvedProjectAbbr+"-"+resolvedPhase.prefix+"-"+submittalId+"."+resubmittalId:"";
-  const submittalSuffixStr=needs.submittalSuffix?(resolvedPhase.suffix&&resolvedPhase.suffix!=="-"?resolvedPhase.suffix:""):"";
-
-  // Generate filename
-  let generatedName="";
-  if(needs.customId){
-    if(state.customIdFormat&&state.customIdValue&&resolvedPermit&&customIdValid!==false)
-      generatedName=state.customIdValue+"_"+resolvedPermit.prefix+"."+conv.ext
-  }else if(needs.fixedSuffix&&resolvedFpidFull){
-    generatedName=resolvedFpidFull+(conv.separator||"-")+conv.fixedSuffix+"."+conv.ext
-  }else if(needs.fixedPrefix){
-    const pSegs=[conv.fixedPrefix];if(docName)pSegs.push(docName);
-    generatedName=pSegs.join(conv.separator||"_")+"."+conv.ext
-  }else if(needs.externalFpid){
-    const efpid=formatExternalFpid(state.externalFpidRaw);
-    if(efpid){const eSegs=[efpid];eSegs.push(docName||conv.exampleDoc);generatedName=eSegs.join("_")+"."+conv.ext}
-  }else{
-    const sep=conv.separator||"_";const segs=[];
-    if(needs.designId&&designIdStr)segs.push(designIdStr);
-    if(needs.fpidFull&&resolvedFpidFull)segs.push(resolvedFpidFull);
-    if(needs.projectId&&resolvedProjectAbbr)segs.push(resolvedProjectAbbr);
-    if(needs.fpidShort&&state.fpidShort)segs.push(state.fpidShort);
-    if(needs.componentId&&resolvedComponentId){segs.push(resolvedComponentId);
-      if(needs.revisionId&&state.revisionIdRaw){const rv=formatRevisionId(state.revisionIdRaw);if(rv)segs.push(rv)}}
-    if(needs.title)segs.push(docName||conv.exampleDoc);
-    if(needs.submittalSuffix&&submittalSuffixStr)segs.push(submittalSuffixStr);
-    let base=segs.join(sep);if(needs.formattedDate&&state.formattedDate)base+="_"+state.formattedDate;
-    if(base)generatedName=base+"."+conv.ext
-  }
-
-  // Field status
+  // Field status (required + optional input fields only)
   const fs={};
-  if(needs.title&&!needs.fixedSuffix)fs["Title"]=!!state.title.trim();
-  if(needs.designId)fs["Design ID"]=!!(resolvedProjectAbbr&&resolvedPhase.prefix&&submittalId);
-  if(needs.fpidFull&&!needs.fixedSuffix)fs["FPID (Full)"]=!!resolvedFpidFull;
-  if(needs.fpidFull&&needs.fixedSuffix)fs["FPID"]=!!state.fpidShort;
-  if(needs.projectId)fs["Project ID"]=!!resolvedProjectAbbr;
-  if(needs.fpidShort&&!needs.fixedSuffix)fs["FPID (Short)"]=!!state.fpidShort;
-  if(needs.componentId)fs["Deliverable"]=!!resolvedComponentId;
-  if(needs.submittalSuffix)fs["Submittal Suffix"]=!!submittalSuffixStr;
-  if(needs.formattedDate)fs["Formatted Date"]=!!state.formattedDate.trim();
-  if(needs.customId){fs["Custom ID Format"]=!!state.customIdFormat;fs["Custom ID"]=!!(state.customIdValue&&customIdValid!==false)}
-  if(needs.externalFpid)fs["External FPID"]=!!formatExternalFpid(state.externalFpidRaw);
-  if(needs.fixedPrefix)fs["Title"]=!!state.title.trim();
+  for(const r of convRules){
+    if(r.required===undefined)continue; // skip lookups
+    const fid=r.field;const fd=FIELD_MAP[fid];if(!fd)continue;
+    const lbl=fd.name;
+    if(fid==="title")fs[lbl]=!!state.title.trim();
+    else if(fid==="subtitle")continue; // optional, shown with title
+    else if(fid==="fpid")fs[hasFullFpid?"FPID":"FPID (Short)"]=!!state.fpidShort;
+    else if(fid==="project")fs["Project"]=!!state.project;
+    else if(fid==="deliverable")fs["Deliverable"]=!!state.component;
+    else if(fid==="submittal")fs["Submittal Phase"]=!!state.submittalPhase;
+    else if(fid==="submittalId")fs["Submittal ID"]=!!padId(state.submittalIdRaw,4);
+    else if(fid==="resubmittalId")continue; // optional, shown with submittalId
+    else if(fid==="revisionId")continue; // optional
+    else if(fid==="date")fs["Date"]=!!state.formattedDate.trim();
+    else if(fid==="permit")fs["Permit Type"]=!!state.customIdFormat;
+    else if(fid==="permitId")fs["Permit ID"]=!!(state.customIdValue&&customIdValid!==false);
+    else if(fid==="externalFpid")fs["External FPID"]=!!formatExternalFpid(state.externalFpidRaw);
+  }
   const isValid=Object.values(fs).length>0&&Object.values(fs).every(Boolean);
   const filledCount=Object.values(fs).filter(Boolean).length;
   const totalCount=Object.values(fs).length;
+
+  // Generate filename using format string
+  const generatedName=generateFilename(conv,state);
 
   // Fields section
   const fields=h("div",{style:{padding:"16px 24px 20px",borderTop:"1px solid #edf0f4"}});
@@ -278,95 +501,109 @@ function renderGenerator(){
   for(const[label,filled]of Object.entries(fs))tagRow.append(fieldTag(label,filled));
   inner.append(tagRow);
 
-  // Title
-  if(needs.title){
-    const row=h("div",{className:"grid2"});
-    row.append(autocompleteEl("Title","auto-abbreviated",state.title,v=>setState({title:v}),"e.g. Pavement Design Report",TITLE_SUGGESTIONS));
-    row.append(inputEl("Sub-Title","optional",state.subTitle,v=>setState({subTitle:v}),"e.g. Segment 1"));
-    inner.append(row)
-  }
+  // Render fields based on RULES (iterate in rules order, skip lookups)
+  const rendered=new Set();
+  for(const r of convRules){
+    if(r.required===undefined)continue;
+    if(rendered.has(r.field))continue;
+    const fid=r.field;rendered.add(fid);
 
-  // External FPID
-  if(needs.externalFpid){
-    const efFormatted=formatExternalFpid(state.externalFpidRaw);
-    inner.append(inputEl("External FPID",efFormatted?"\u2192 "+efFormatted:"1-7 digit number \u2192 ######-#",state.externalFpidRaw,v=>setState({externalFpidRaw:v.replace(/\D/g,"")}),"e.g. 2012103",{maxLength:"7",inputMode:"numeric"}))
-  }
-
-  // FPID
-  const filteredFpids=state.project?FPIDS.filter(f=>f.project===state.project):FPIDS;
-  if(needsFpid){
-    inner.append(selectEl(needs.fpidFull?"FPID":"FPID (Short)",needs.fpidFull?"resolves full FPID + project":"short format",
-      state.fpidShort,v=>{const f=FPIDS.find(fp=>fp.fpid===v);setState({fpidShort:v,project:f?f.project:state.project})},
-      "Select FPID...",filteredFpids.map(f=>({value:f.fpid,label:f.fpid+" \u2014 "+f.desc}))));
-    if(state.fpidShort){
-      const f=FPIDS.find(fp=>fp.fpid===state.fpidShort);
-      if(f){const p=PROJECTS.find(pr=>pr.name===f.project);
-        const fc=h("div",{className:"fpid-card"},
-          h("span",null,h("strong",null,"Project: "),f.project+(p?" ("+p.abbr+")":"")),
-          needs.fpidFull?h("span",null,h("strong",null,"Full FPID: "),h("span",{className:"mono"},f.full)):null,
-          h("span",{style:{color:"#64748b",fontStyle:"italic",flex:"1",minWidth:"150px"}},f.desc));
-        inner.append(fc)
+    if(fid==="title"){
+      rendered.add("subtitle");
+      const row=h("div",{className:"grid2"});
+      row.append(autocompleteEl("Title","auto-abbreviated",state.title,v=>setState({title:v}),"e.g. Pavement Design Report",TITLE_SUGGESTIONS));
+      if(hasField("subtitle"))row.append(inputEl("Sub-Title","optional",state.subTitle,v=>setState({subTitle:v}),"e.g. Segment 1"));
+      inner.append(row)
+    }
+    else if(fid==="externalFpid"){
+      const efFormatted=formatExternalFpid(state.externalFpidRaw);
+      inner.append(inputEl("External FPID",efFormatted?"\u2192 "+efFormatted:"1-7 digit number \u2192 ######-#",state.externalFpidRaw,v=>setState({externalFpidRaw:v.replace(/\D/g,"")}),"e.g. 2012103",{maxLength:"7",inputMode:"numeric"}))
+    }
+    else if(fid==="fpid"){
+      const filteredFpids=state.project?FPIDS.filter(f=>f.project===state.project):FPIDS;
+      inner.append(selectEl(hasFullFpid?"FPID":"FPID (Short)",hasFullFpid?"resolves full FPID + project":"short format",
+        state.fpidShort,v=>{const f=FPIDS.find(fp=>fp.fpid===v);setState({fpidShort:v,project:f?f.project:state.project})},
+        "Select FPID...",filteredFpids.map(f=>({value:f.fpid,label:f.fpid+" \u2014 "+f.desc}))));
+      if(state.fpidShort){
+        const f=FPIDS.find(fp=>fp.fpid===state.fpidShort);
+        if(f){const p=PROJECTS.find(pr=>pr.name===f.project);
+          const fc=h("div",{className:"fpid-card"},
+            h("span",null,h("strong",null,"Project: "),f.project+(p?" ("+p.abbr+")":"")),
+            hasFullFpid?h("span",null,h("strong",null,"Full FPID: "),h("span",{className:"mono"},f.full)):null,
+            h("span",{style:{color:"#64748b",fontStyle:"italic",flex:"1",minWidth:"150px"}},f.desc));
+          inner.append(fc)
+        }
       }
     }
-  }
-
-  // Project (no FPID)
-  if(needsProject&&!needsFpid)inner.append(selectEl("Project","maps to abbreviation",state.project,v=>setState({project:v}),"Select project...",PROJECTS.map(p=>({value:p.name,label:p.name+" ("+p.abbr+")"}))));
-
-  // Design ID fields
-  if(needs.designId){
-    inner.append(selectEl("Submittal Phase","prefix for Design ID",state.submittalPhase,v=>setState({submittalPhase:v}),"Select phase...",SUBMITTAL_PHASES.filter(s=>s.prefix).map(s=>({value:s.desc,label:s.desc}))));
-    const row=h("div",{className:"grid2",style:{alignItems:"start"}});
-    row.append(inputEl("Submittal ID",submittalId?"\u2192 "+submittalId:"integer \u2192 0000",state.submittalIdRaw,v=>setState({submittalIdRaw:v.replace(/\D/g,"")}),"e.g. 1",{maxLength:"4",inputMode:"numeric"}));
-    const rw=h("div",{className:"mb14"});
-    rw.append(h("label",{className:"lbl"},h("span",{className:"lbl-text"},"Resubmittal"),h("span",{className:"lbl-hint"},state.isResubmittal&&resubmittalId?"\u2192 "+resubmittalId:"defaults to 00")));
-    const rd=h("div",{style:{display:"flex",alignItems:"center",gap:"10px",minHeight:"38px"}});
-    const cb=h("input",{type:"checkbox",style:{width:"16px",height:"16px",accentColor:"#2563eb",cursor:"pointer"},onChange:e=>setState({isResubmittal:e.target.checked,resubmittalIdRaw:e.target.checked?state.resubmittalIdRaw:""})});
-    cb.checked=state.isResubmittal;
-    rd.append(h("label",{style:{display:"flex",alignItems:"center",gap:"6px",cursor:"pointer",fontSize:"13px",color:"#475569",userSelect:"none"}},cb,"Resub?"));
-    if(state.isResubmittal){const ri=h("input",{className:"inp",type:"text",inputMode:"numeric",maxLength:"2",value:state.resubmittalIdRaw,placeholder:"e.g. 1",style:{flex:"1"},onInput:e=>setState({resubmittalIdRaw:e.target.value.replace(/\D/g,"")})});rd.append(ri)}
-    else rd.append(h("span",{className:"mono",style:{fontSize:"13px",color:"#94a3b8"}},"00"));
-    rw.append(rd);row.append(rw);inner.append(row);
-    if(designIdStr)inner.append(h("div",{className:"design-preview"},h("strong",null,"Design ID preview: "),h("span",{className:"mono",style:{fontSize:"12px",fontWeight:"600",color:"#4c1d95"}},designIdStr)))
-  }
-
-  // Deliverable
-  if(needs.componentId)inner.append(selectEl("Deliverable","plan discipline",state.component,v=>setState({component:v}),"Select component...",COMPONENTS.map(c=>({value:c.name,label:c.name}))));
-
-  // Revision ID (optional, for fdot-prod)
-  if(needs.revisionId){
-    const rvFormatted=formatRevisionId(state.revisionIdRaw);
-    inner.append(inputEl("Revision ID",rvFormatted?"\u2192 "+rvFormatted:"optional, integer \u2192 REV00",state.revisionIdRaw,v=>setState({revisionIdRaw:v.replace(/\D/g,"")}),"e.g. 1",{maxLength:"2",inputMode:"numeric"}))
-  }
-
-  // Submittal suffix (non-design)
-  if(needs.submittalSuffix&&!needs.designId)inner.append(selectEl("Submittal Phase","suffix",state.submittalPhase,v=>setState({submittalPhase:v}),"Select phase...",SUBMITTAL_PHASES.map(s=>({value:s.desc,label:s.desc+(s.suffix&&s.suffix!=="-"?" \u2192 "+s.suffix:"")}))));
-
-  // Custom ID / Permit
-  if(needs.customId){
-    inner.append(selectEl("Custom ID Format","permit type",state.customIdFormat,v=>setState({customIdFormat:v,customIdValue:""}),"Select permit type...",PERMITS.map(p=>({value:p.name,label:p.name+" \u2014 format: "+p.hint}))));
-    if(state.customIdFormat&&resolvedPermit){
-      inner.append(h("div",{className:"permit-info"},h("div",{style:{marginBottom:"3px"}},h("strong",null,"Format: "),resolvedPermit.mask),h("div",null,h("strong",null,"Example: "),h("span",{className:"mono",style:{fontWeight:"600"}},resolvedPermit.example))));
-      const pw=h("div",{className:"mb14"});
-      pw.append(h("label",{className:"lbl"},h("span",{className:"lbl-text"},"Custom ID"),h("span",{className:"lbl-hint"},"format: "+resolvedPermit.hint)));
-      const pi=h("input",{className:"inp mono",type:"text",value:state.customIdValue,placeholder:resolvedPermit.example,
-        style:{borderColor:state.customIdValue?(customIdValid?"#22c55e":"#ef4444"):"#d1d5db"},
-        onInput:e=>setState({customIdValue:e.target.value})});
-      pw.append(pi);
-      if(state.customIdValue&&customIdValid===false)pw.append(h("div",{style:{marginTop:"4px",fontSize:"11px",color:"#ef4444",fontWeight:"500"}},"\u26A0\uFE0F Does not match expected format ("+resolvedPermit.hint+")"));
-      if(state.customIdValue&&customIdValid===true)pw.append(h("div",{style:{marginTop:"4px",fontSize:"11px",color:"#16a34a",fontWeight:"500"}},"\u2713 Valid "+state.customIdFormat.replace("Permit ","")+" ID"));
-      inner.append(pw)
+    else if(fid==="project"){
+      inner.append(selectEl("Project","maps to abbreviation",state.project,v=>setState({project:v}),"Select project...",PROJECTS.map(p=>({value:p.name,label:p.name+" ("+p.abbr+")"}))));
     }
-  }
-
-  // Date
-  if(needs.formattedDate){
-    const dw=h("div",{className:"mb14"});
-    dw.append(h("label",{className:"lbl"},h("span",{className:"lbl-text"},"Date"),h("span",{className:"lbl-hint"},state.formattedDate||"YYYY-MM-DD")));
-    const dr=h("div",{style:{display:"flex",gap:"8px",alignItems:"center"}});
-    dr.append(h("input",{className:"inp",type:"date",value:state.formattedDate,style:{flex:"1"},onInput:e=>setState({formattedDate:e.target.value})}));
-    dr.append(h("button",{className:"sm-btn",style:{color:"#2563eb",background:"rgba(37,99,235,.07)",borderColor:"rgba(37,99,235,.18)",whiteSpace:"nowrap"},onClick:()=>setState({formattedDate:new Date().toLocaleDateString("en-CA")})},"Today"));
-    dw.append(dr);inner.append(dw)
+    else if(fid==="submittal"){
+      // For design convention, submittal has prefix (only show phases with prefix)
+      const isDesign=hasField("submittalId");
+      const phases=isDesign?SUBMITTAL_PHASES.filter(s=>s.prefix):SUBMITTAL_PHASES;
+      inner.append(selectEl("Submittal Phase",isDesign?"prefix for Design ID":"suffix",state.submittalPhase,v=>setState({submittalPhase:v}),"Select phase...",phases.map(s=>({value:s.desc,label:s.desc+((!isDesign&&s.suffix&&s.suffix!=="-")?" \u2192 "+s.suffix:"")}))));
+    }
+    else if(fid==="submittalId"){
+      rendered.add("resubmittalId");
+      const submittalId=padId(state.submittalIdRaw,4);
+      const resubmittalId=state.isResubmittal?padId(state.resubmittalIdRaw,2):"00";
+      const row=h("div",{className:"grid2",style:{alignItems:"start"}});
+      row.append(inputEl("Submittal ID",submittalId?"\u2192 "+submittalId:"integer \u2192 0000",state.submittalIdRaw,v=>setState({submittalIdRaw:v.replace(/\D/g,"")}),"e.g. 1",{maxLength:"4",inputMode:"numeric"}));
+      if(hasField("resubmittalId")){
+        const rw=h("div",{className:"mb14"});
+        rw.append(h("label",{className:"lbl"},h("span",{className:"lbl-text"},"Resubmittal"),h("span",{className:"lbl-hint"},state.isResubmittal&&resubmittalId?"\u2192 "+resubmittalId:"defaults to 00")));
+        const rd=h("div",{style:{display:"flex",alignItems:"center",gap:"10px",minHeight:"38px"}});
+        const cb=h("input",{type:"checkbox",style:{width:"16px",height:"16px",accentColor:"#2563eb",cursor:"pointer"},onChange:e=>setState({isResubmittal:e.target.checked,resubmittalIdRaw:e.target.checked?state.resubmittalIdRaw:""})});
+        cb.checked=state.isResubmittal;
+        rd.append(h("label",{style:{display:"flex",alignItems:"center",gap:"6px",cursor:"pointer",fontSize:"13px",color:"#475569",userSelect:"none"}},cb,"Resub?"));
+        if(state.isResubmittal){const ri=h("input",{className:"inp",type:"text",inputMode:"numeric",maxLength:"2",value:state.resubmittalIdRaw,placeholder:"e.g. 1",style:{flex:"1"},onInput:e=>setState({resubmittalIdRaw:e.target.value.replace(/\D/g,"")})});rd.append(ri)}
+        else rd.append(h("span",{className:"mono",style:{fontSize:"13px",color:"#94a3b8"}},"00"));
+        rw.append(rd);row.append(rw)
+      }
+      inner.append(row);
+      // Design ID preview
+      const resolvedProjectAbbr=_resolveField("projectId",state);
+      const resolvedPrefix=_resolveField("submittalPrefix",state);
+      if(resolvedProjectAbbr&&resolvedPrefix&&submittalId){
+        const designIdStr=resolvedProjectAbbr+"-"+resolvedPrefix+"-"+submittalId+"."+resubmittalId;
+        inner.append(h("div",{className:"design-preview"},h("strong",null,"Design ID preview: "),h("span",{className:"mono",style:{fontSize:"12px",fontWeight:"600",color:"#4c1d95"}},designIdStr)))
+      }
+    }
+    else if(fid==="deliverable"){
+      inner.append(selectEl("Deliverable","plan discipline",state.component,v=>setState({component:v}),"Select component...",COMPONENTS.map(c=>({value:c.name,label:c.name}))));
+    }
+    else if(fid==="revisionId"){
+      const rvFormatted=formatRevisionId(state.revisionIdRaw);
+      inner.append(inputEl("Revision ID",rvFormatted?"\u2192 "+rvFormatted:"optional, integer \u2192 REV00",state.revisionIdRaw,v=>setState({revisionIdRaw:v.replace(/\D/g,"")}),"e.g. 1",{maxLength:"2",inputMode:"numeric"}))
+    }
+    else if(fid==="permit"){
+      inner.append(selectEl("Permit Type","permit agency",state.customIdFormat,v=>setState({customIdFormat:v,customIdValue:""}),"Select permit type...",PERMITS.map(p=>({value:p.name,label:p.name+" \u2014 format: "+p.hint}))));
+      if(state.customIdFormat&&resolvedPermit){
+        inner.append(h("div",{className:"permit-info"},h("div",{style:{marginBottom:"3px"}},h("strong",null,"Format: "),resolvedPermit.mask),h("div",null,h("strong",null,"Example: "),h("span",{className:"mono",style:{fontWeight:"600"}},resolvedPermit.example))))
+      }
+    }
+    else if(fid==="permitId"){
+      if(state.customIdFormat&&resolvedPermit){
+        const pw=h("div",{className:"mb14"});
+        pw.append(h("label",{className:"lbl"},h("span",{className:"lbl-text"},"Permit ID"),h("span",{className:"lbl-hint"},"format: "+resolvedPermit.hint)));
+        const pi=h("input",{className:"inp mono",type:"text",value:state.customIdValue,placeholder:resolvedPermit.example,
+          style:{borderColor:state.customIdValue?(customIdValid?"#22c55e":"#ef4444"):"#d1d5db"},
+          onInput:e=>setState({customIdValue:e.target.value})});
+        pw.append(pi);
+        if(state.customIdValue&&customIdValid===false)pw.append(h("div",{style:{marginTop:"4px",fontSize:"11px",color:"#ef4444",fontWeight:"500"}},"\u26A0\uFE0F Does not match expected format ("+resolvedPermit.hint+")"));
+        if(state.customIdValue&&customIdValid===true)pw.append(h("div",{style:{marginTop:"4px",fontSize:"11px",color:"#16a34a",fontWeight:"500"}},"\u2713 Valid "+state.customIdFormat.replace("Permit ","")+" ID"));
+        inner.append(pw)
+      }
+    }
+    else if(fid==="date"){
+      const dw=h("div",{className:"mb14"});
+      dw.append(h("label",{className:"lbl"},h("span",{className:"lbl-text"},"Date"),h("span",{className:"lbl-hint"},state.formattedDate||"YYYY-MM-DD")));
+      const dr=h("div",{style:{display:"flex",gap:"8px",alignItems:"center"}});
+      dr.append(h("input",{className:"inp",type:"date",value:state.formattedDate,style:{flex:"1"},onInput:e=>setState({formattedDate:e.target.value})}));
+      dr.append(h("button",{className:"sm-btn",style:{color:"#2563eb",background:"rgba(37,99,235,.07)",borderColor:"rgba(37,99,235,.18)",whiteSpace:"nowrap"},onClick:()=>setState({formattedDate:new Date().toLocaleDateString("en-CA")})},"Today"));
+      dw.append(dr);inner.append(dw)
+    }
   }
 
   fields.append(inner);frag.append(fields);
@@ -388,7 +625,7 @@ function renderGenerator(){
   if(generatedName){
     const meta=h("div",{style:{marginTop:"6px",display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}});
     meta.append(h("span",{style:{fontSize:"10px",fontWeight:"700",letterSpacing:".06em",textTransform:"uppercase",color:"#475569",background:"#e2e8f0",borderRadius:"4px",padding:"2px 8px",display:"inline-block"}},"."+conv.ext));
-    meta.append(h("span",{style:{fontSize:"11px",color:"#64748b"}},needs.customId?"permit convention":(conv.separator||"_")==="-"?"sep: hyphen ( - )":"sep: underscore ( _ )"));
+    meta.append(h("span",{style:{fontSize:"11px",color:"#64748b"}},(conv.separator||"_")==="-"?"sep: hyphen ( - )":"sep: underscore ( _ )"));
     if(!isValid)meta.append(h("span",{style:{fontSize:"11px",color:"#b45309",fontWeight:"500"}},"\u2014 missing required fields"));
     out.append(meta)
   }
