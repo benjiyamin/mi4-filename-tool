@@ -8,8 +8,8 @@ const ALL_PERMIT_CODES=new Set(PERMITS.map(p=>p.code));
 const FIELD_MAP=Object.fromEntries(FIELDS.map(f=>[f.id,f]));
 const RULES_BY_CONV={};for(const r of RULES){if(!RULES_BY_CONV[r.convention])RULES_BY_CONV[r.convention]=[];RULES_BY_CONV[r.convention].push(r)}
 const ALL_SUBMITTAL_PREFIXES=new Set(SUBMITTAL_PHASES.map(s=>s.prefix).filter(Boolean));
-const DATE_RE=/^\d{4}-\d{2}-\d{2}$/;
-const EXTERNAL_FPID_RE=/^\d{6}-\d$/;
+const DATE_RE=/^\d{4}-\d{2}-\d{2}(?!\d)/;
+const EXTERNAL_FPID_RE=/^\d{6}-\d(?!\d)/;
 const SEG_COLORS=["#7c3aed","#0891b2","#059669","#ca8a04","#dc2626","#2563eb","#9333ea","#e11d48"];
 const SEG_EXPLAIN={"Extension":"The file extension must match the convention (.pdf, .kmz).","FPID (Full)":"An 11-digit code identifying the Financial Project ID.","FPID (Short)":"The standard FPID format (######-#) used in FDOT project tracking.","Project ID":"A short abbreviation (P1\u2013P5, PA, PB) mapped from the project name.","Deliverable ID":"A structured identifier for the plan discipline, e.g. PLANS-01-ROADWAY.","Submittal Suffix":"Indicates the submittal phase: 15pct, 30pct, 60pct, 90pct, Final, or RFC.","Submittal Prefix":"The phase prefix (PS, FS, RC, etc.) identifying the submittal stage.","Submittal ID":"A 4-digit sequential number identifying the submittal (e.g. 0001).","Resubmittal ID":"A 2-digit resubmittal number (e.g. 00 for original, 01 for first resubmittal).","Document Name":"The document title, PascalCased and abbreviated per the abbreviation table.","Document Name (Sub)":"An optional sub-title appended to the document name with a hyphen.","Formatted Date":"Date in YYYY-MM-DD format.","Custom ID":"The permit number matching the selected permit type's format.","Permit Code":"The permit agency and type code (e.g. SFWMD-ERP, USACE-404).","External FPID":"A non-MI4 Financial Project ID in ######-# format.","Revision ID":"Revision number in REVnn format (e.g. REV01).","Program Prefix":"The fixed prefix \u2018MI4\u2019 identifying program-level documents.","Fixed Suffix":"The fixed suffix \u2018GuideSignWorksheets\u2019 for guide sign deliverables.","Unexpected":"Extra segments that don't belong in this convention's pattern."};
 
@@ -34,9 +34,9 @@ const FIELD_VALIDATORS={
   phaseId:{set:ALL_SUFFIXES,label:"Submittal Suffix"},
   permitCode:{set:ALL_PERMIT_CODES,label:"Permit Code"},
   submittalPrefix:{set:ALL_SUBMITTAL_PREFIXES,label:"Submittal Prefix"},
-  submittalId:{regex:/^\d{4}$/,label:"Submittal ID"},
-  resubmittalId:{regex:/^\d{2}$/,label:"Resubmittal ID"},
-  revisionId:{regex:/^REV\d{2}$/,label:"Revision ID"},
+  submittalId:{regex:/^\d{4}(?!\d)/,label:"Submittal ID"},
+  resubmittalId:{regex:/^\d{2}(?!\d)/,label:"Resubmittal ID"},
+  revisionId:{regex:/^REV\d{2}(?!\d)/,label:"Revision ID"},
   externalFpid:{regex:EXTERNAL_FPID_RE,label:"External FPID"},
   date:{regex:DATE_RE,label:"Formatted Date"},
   title:{greedy:true,label:"Document Name"},
