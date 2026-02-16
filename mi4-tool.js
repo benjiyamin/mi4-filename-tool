@@ -330,7 +330,7 @@ function setState(patch){
   const app=document.getElementById("app");const ae=document.activeElement;let fi=-1,ss=-1,se=-1,tag="";
   if(ae&&app&&app.contains(ae)){tag=ae.tagName;const all=[...app.querySelectorAll("input,select,textarea")];fi=all.indexOf(ae);if(typeof ae.selectionStart==="number"){try{ss=ae.selectionStart;se=ae.selectionEnd}catch(e){}}}
   Object.assign(state,patch);_restoring=true;render();
-  if(fi>-1){const all=[...app.querySelectorAll("input,select,textarea")];const el=all[fi];if(el&&el.tagName===tag){el.focus();if(ss>-1&&typeof el.selectionStart==="number"){try{el.setSelectionRange(ss,se)}catch(e){}}}}
+  if(fi>-1&&tag!=="SELECT"){const all=[...app.querySelectorAll("input,select,textarea")];const el=all[fi];if(el&&el.tagName===tag){el.focus();if(ss>-1&&typeof el.selectionStart==="number"){try{el.setSelectionRange(ss,se)}catch(e){}}}}
   _restoring=false;
 }
 
@@ -372,7 +372,7 @@ function autocompleteEl(label,hint,value,onChange,placeholder,suggestions){
   const inp=h("input",{className:"inp",type:"text",value,placeholder:placeholder||"",autocomplete:"off",
     onInput:e=>onChange(e.target.value),
     onFocus:()=>{if(!_restoring&&!state.acFocused)setState({acFocused:true,acHighlightIdx:-1})},
-    onBlur:()=>{if(!_restoring)setTimeout(()=>{if(state.acFocused)setState({acFocused:false,acHighlightIdx:-1})},150)},
+    onBlur:()=>{if(!_restoring)setTimeout(()=>{if(state.acFocused)setState({acFocused:false,acHighlightIdx:-1})},200)},
     onKeydown:e=>{if(!state.acFocused||!filtered.length)return;if(e.key==="ArrowDown"){e.preventDefault();setState({acHighlightIdx:Math.min(state.acHighlightIdx+1,filtered.length-1)})}else if(e.key==="ArrowUp"){e.preventDefault();setState({acHighlightIdx:Math.max(state.acHighlightIdx-1,0)})}else if(e.key==="Enter"&&state.acHighlightIdx>=0){e.preventDefault();onChange(filtered[state.acHighlightIdx]);setState({acFocused:false,acHighlightIdx:-1})}else if(e.key==="Escape"){setState({acFocused:false,acHighlightIdx:-1})}}
   });
   wrap.append(lbl,inp);
