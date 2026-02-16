@@ -368,7 +368,7 @@ function autocompleteEl(label,hint,value,onChange,placeholder,suggestions){
   const wrap=h("div",{className:"autocomplete-wrap"});
   const lbl=h("label",{className:"lbl"},h("span",{className:"lbl-text"},label),hint?h("span",{className:"lbl-hint"},hint):null);
   const q=value?value.toLowerCase():"";
-  const filtered=q?suggestions.filter(s=>s.toLowerCase().includes(q)).slice(0,8):suggestions.slice(0,8);
+  const filtered=q?suggestions.filter(s=>s.toLowerCase().includes(q)).slice(0,8):[];
   const inp=h("input",{className:"inp",type:"text",value,placeholder:placeholder||"",autocomplete:"off",
     onInput:e=>onChange(e.target.value),
     onFocus:()=>{if(!_restoring&&!state.acFocused)setState({acFocused:true,acHighlightIdx:-1})},
