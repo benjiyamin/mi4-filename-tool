@@ -78,8 +78,8 @@ function detectConvention(fn){
   for(const cid of _DETECT_ORDER){
     const result=parseFilename(fn,cid);
     if(!result)continue;
-    const total=result.segments.length;const valid=result.segments.filter(s=>s.valid).length;
-    if(result.overall&&valid>bestScore){best=cid;bestScore=valid;break}
+    const valid=result.segments.filter(s=>s.valid).length;
+    if(result.overall){best=cid;bestScore=valid;break}
     if(valid>bestScore){best=cid;bestScore=valid}
   }
   return best
