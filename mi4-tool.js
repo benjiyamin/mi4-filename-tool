@@ -7,6 +7,9 @@ const ALL_SUFFIXES=new Set(SUBMITTAL_PHASES.map(s=>s.suffix).filter(s=>s&&s!=="-
 const ALL_PERMIT_CODES=new Set(PERMITS.map(p=>p.code));
 const FIELD_MAP=Object.fromEntries(FIELDS.map(f=>[f.id,f]));
 const RULES_BY_CONV={};for(const r of RULES){if(!RULES_BY_CONV[r.convention])RULES_BY_CONV[r.convention]=[];RULES_BY_CONV[r.convention].push(r)}
+const _DETERMINATION=(new URLSearchParams(window.location.search)).get("determination");
+const FILTERED_CONVENTIONS=_DETERMINATION?CONVENTIONS.filter(c=>c.phase===_DETERMINATION):CONVENTIONS;
+const _FILTERED_IDS=new Set(FILTERED_CONVENTIONS.map(c=>c.id));
 const ALL_SUBMITTAL_PREFIXES=new Set(SUBMITTAL_PHASES.map(s=>s.prefix).filter(Boolean));
 const DATE_RE=/^\d{4}-\d{2}-\d{2}$/;
 const EXTERNAL_FPID_RE=/^\d{6}-\d$/;
@@ -69,13 +72,14 @@ function formatRevisionId(v){const n=parseInt(v,10);if(isNaN(n)||n<=0)return"";r
 
 // Detection order: most specific conventions first
 const _DETECT_ORDER=["kmz","guide","permit","fdot-prod-ph","fdot-prod","design","fpid-doc","fpid-doc-ext","program-doc"];
+const _FILTERED_DETECT_ORDER=_DETERMINATION?_DETECT_ORDER.filter(id=>_FILTERED_IDS.has(id)):_DETECT_ORDER;
 function detectConvention(fn){
   if(!fn)return null;
   // Quick extension check
-  if(fn.toLowerCase().endsWith(".kmz"))return"kmz";
+  if(fn.toLowerCase().endsWith(".kmz")&&_FILTERED_IDS.has("kmz"))return"kmz";
   // Trial-parse against each convention in specificity order
   let best=null,bestScore=-1;
-  for(const cid of _DETECT_ORDER){
+  for(const cid of _FILTERED_DETECT_ORDER){
     const result=parseFilename(fn,cid);
     if(!result)continue;
     const total=result.segments.length;const valid=result.segments.filter(s=>s.valid).length;
@@ -434,14 +438,14 @@ function generateFilename(conv,st){
 
 let _prevConvention="";
 function renderGenerator(){
-  const {convention:cid}=state;const conv=CONVENTIONS.find(c=>c.id===cid)||null;
+  const {convention:cid}=state;const conv=FILTERED_CONVENTIONS.find(c=>c.id===cid)||null;
   const _convChanged=cid!==_prevConvention;_prevConvention=cid;
   const frag=document.createDocumentFragment();
 
   // Convention dropdown
   const convWrap=h("div",{style:{padding:"18px 24px 12px"}});
   convWrap.append(selectEl("Convention","naming pattern",cid,v=>{setState({convention:v,title:"",subTitle:"",fpidShort:"",project:"",component:"",submittalPhase:"",submittalIdRaw:"",isResubmittal:false,resubmittalIdRaw:"",formattedDate:"",customIdFormat:"",customIdValue:"",externalFpidRaw:"",revisionIdRaw:""})},
-    "Choose a naming convention...",CONVENTIONS.map(c=>({value:c.id,label:c.desc}))));
+    "Choose a naming convention...",FILTERED_CONVENTIONS.map(c=>({value:c.id,label:c.desc}))));
   frag.append(convWrap);
 
   if(!conv)return frag;
@@ -637,7 +641,7 @@ function renderValidator(){
   const frag=document.createDocumentFragment();
   const {valFilename:fn,valConvOverride:co,valExpandedSeg:es}=state;
   const detected=fn.trim()?detectConvention(fn.trim()):null;
-  const activeId=co||detected;const activeConv=CONVENTIONS.find(c=>c.id===activeId)||null;
+  const activeId=co||detected;const activeConv=FILTERED_CONVENTIONS.find(c=>c.id===activeId)||null;
   const result=fn.trim()&&activeId?parseFilename(fn.trim(),activeId):null;
   const passCount=result?result.segments.filter(s=>s.valid).length:0;
   const totalSegs=result?result.segments.length:0;
@@ -648,8 +652,8 @@ function renderValidator(){
   fnWrap.append(h("input",{className:"inp inp-mono",type:"text",value:fn,placeholder:"e.g. 43145625201-PLANS-01-ROADWAY-90pct.pdf",onInput:e=>setState({valFilename:e.target.value})}));
   top.append(fnWrap);
   top.append(selectEl("Convention",detected&&!co?"auto-detected":co?"manual override":"",co,v=>setState({valConvOverride:v}),
-    detected?CONVENTIONS.find(c=>c.id===detected)?.desc+" (auto-detected)":"Paste a filename first...",
-    CONVENTIONS.map(c=>({value:c.id,label:c.desc}))));
+    detected?FILTERED_CONVENTIONS.find(c=>c.id===detected)?.desc+" (auto-detected)":"Paste a filename first...",
+    FILTERED_CONVENTIONS.map(c=>({value:c.id,label:c.desc}))));
   if(fn.trim()&&!activeId)top.append(h("div",{style:{padding:"12px 16px",background:"#fffbeb",border:"1px solid #fde68a",borderRadius:"8px",marginBottom:"14px"}},
     h("div",{style:{fontSize:"12px",fontWeight:"600",color:"#92400e"}},"\u26A0\uFE0F Could not auto-detect convention"),
     h("div",{style:{fontSize:"11px",color:"#a16207",marginTop:"2px"}},"Select a convention manually to validate against.")));
@@ -735,6 +739,7 @@ function renderAbbreviations(){
   hdr.append(h("h2",{style:{fontSize:"20px",fontWeight:"700",color:"#f1f5f9",margin:"0 0 4px"}},"Abbreviation Reference"));
   hdr.append(h("p",{style:{fontSize:"13px",color:"#64748b",margin:"0"}},"Words are automatically replaced with these abbreviations in generated file names. ",h("strong",{style:{color:"#94a3b8"}},Object.keys(ABBREVIATIONS).length+" entries")));
   frag.append(hdr);
+  const fb=_filterBanner();if(fb)frag.append(fb);
 
   const card=h("div",{className:"card"});
   const searchWrap=h("div",{style:{padding:"16px 24px 10px"}});
@@ -763,11 +768,12 @@ function renderConventions(){
   const hdr=h("div",{style:{maxWidth:"600px",width:"100%",marginBottom:"16px"}});
   hdr.append(h("button",{className:"back-link",onClick:()=>setState({view:"main"})},h("span",{style:{fontSize:"17px",lineHeight:"1"}},"\u2190")," Back"));
   hdr.append(h("h2",{style:{fontSize:"20px",fontWeight:"700",color:"#f1f5f9",margin:"0 0 4px"}},"Naming Conventions"));
-  hdr.append(h("p",{style:{fontSize:"13px",color:"#64748b",margin:"0"}},"Reference for the "+CONVENTIONS.length+" file naming conventions."));
+  hdr.append(h("p",{style:{fontSize:"13px",color:"#64748b",margin:"0"}},"Reference for the "+FILTERED_CONVENTIONS.length+" file naming conventions."));
   frag.append(hdr);
+  const fb2=_filterBanner();if(fb2)frag.append(fb2);
 
   const card=h("div",{className:"card"});
-  CONVENTIONS.forEach((c,i)=>{
+  FILTERED_CONVENTIONS.forEach((c,i)=>{
     const isOpen=state.convExpanded===c.id;
     const convRules=RULES_BY_CONV[c.id]||[];
     const reqFields=convRules.filter(r=>r.required===true).map(r=>(FIELD_MAP[r.field]||{}).name||r.field);
@@ -824,6 +830,14 @@ function renderConventions(){
   frag.append(card);return frag
 }
 
+function _filterBanner(){
+  if(!_DETERMINATION)return null;
+  const pl=_DETERMINATION==="post"?"Post-Determination":"Pre-Determination";
+  return h("div",{style:{display:"flex",alignItems:"center",justifyContent:"center",gap:"8px",margin:"0 auto 12px",padding:"6px 16px",background:"rgba(251,191,36,.1)",border:"1px solid rgba(251,191,36,.25)",borderRadius:"8px",maxWidth:"600px",width:"100%"}},
+    h("span",{style:{fontSize:"12px",fontWeight:"600",color:"#fbbf24"}},"Showing "+pl+" conventions only"),
+    h("a",{href:window.location.pathname,style:{fontSize:"11px",color:"#60a5fa",marginLeft:"4px",textDecoration:"underline"}},"Show all"))
+}
+
 // ═══════ MAIN RENDER ═══════
 function render(){
   const app=document.getElementById("app");app.innerHTML="";
@@ -839,6 +853,7 @@ function render(){
   navRow.append(h("button",{className:"nav-link",onClick:()=>setState({view:"abbreviations"})},"View Abbreviations"));
   const hdrWrap=h("div",{style:{textAlign:"center",marginBottom:"6px",maxWidth:"600px"}},badge,title,subtitle,navRow);
   app.append(hdrWrap);
+  const fb=_filterBanner();if(fb)app.append(fb);
 
   // Toggle
   const toggle=h("div",{className:"toggle-wrap"});
