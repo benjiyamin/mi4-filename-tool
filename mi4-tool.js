@@ -69,6 +69,11 @@ function padId(v,l){const n=parseInt(v,10);return isNaN(n)||n<0?"":String(n).pad
 function validatePermitId(v,rx){if(!v||!rx)return false;try{return new RegExp(rx).test(v)}catch{return false}}
 function formatExternalFpid(v){const n=parseInt(v,10);if(isNaN(n)||n<0)return"";const s=String(n).padStart(7,"0");return s.slice(0,6)+"-"+s.slice(6)}
 function formatRevisionId(v){const n=parseInt(v,10);if(isNaN(n)||n<=0)return"";return"REV"+String(n).padStart(2,"0")}
+function _getFieldLabel(fid){return FIELD_VALIDATORS[fid]?.label||FIELD_MAP[fid]?.name||fid}
+function _getFieldMetadata(fid,convRules){const f=FIELD_MAP[fid];if(!f)return{isDerived:false,isRequired:false};if(f.type==="lookup")return{isDerived:true,isRequired:null};const rule=convRules.find(r=>r.field===fid);return{isDerived:false,isRequired:rule?rule.required:false}}
+function _getFieldExample(fid,exampleName,conventionId){try{const parsed=parseFilename(exampleName,conventionId);if(parsed&&parsed.segments){const lbl=_getFieldLabel(fid);const seg=parsed.segments.find(s=>s.label===lbl);if(seg&&seg.value)return seg.value}}catch(e){}return FIELD_PLACEHOLDERS[fid]||fid}
+function renderPatternVisual(conv){const cont=h("div",{className:"pattern-visual"});const tokens=tokenizeFormat(conv.format);let fieldIdx=0,inOpt=false;for(const t of tokens){if(t.type==="opt_start"){inOpt=true;continue}if(t.type==="opt_end"){inOpt=false;continue}if(t.type==="literal"){cont.append(h("span",{className:"pattern-literal"},t.value))}else if(t.type==="field"){const lbl=_getFieldLabel(t.id);const color=SEG_COLORS[fieldIdx%SEG_COLORS.length];const seg=h("span",{className:inOpt?"pattern-segment optional":"pattern-segment",style:{backgroundColor:color,color:"#fff",border:`1px solid ${color}`},title:SEG_EXPLAIN[lbl]||lbl},lbl);cont.append(seg);fieldIdx++}}cont.append(h("span",{className:"pattern-literal"},"."+conv.ext));return cont}
+function renderPatternLegend(conv){const frag=document.createDocumentFragment();const tokens=tokenizeFormat(conv.format);const uniqueFields=[];const fieldIds=[];for(const t of tokens){if(t.type==="field"&&!fieldIds.includes(t.id)){fieldIds.push(t.id);uniqueFields.push(t)}}const convRules=RULES_BY_CONV[conv.id]||[];fieldIds.forEach((fid,i)=>{const lbl=_getFieldLabel(fid);const color=SEG_COLORS[i%SEG_COLORS.length];const meta=_getFieldMetadata(fid,convRules);const example=_getFieldExample(fid,conv.exampleName,conv.id);const desc=SEG_EXPLAIN[lbl]||"";const row=h("div",{className:"pattern-legend-row"});row.append(h("div",{className:"color-dot",style:{backgroundColor:color}}));const lblSpan=h("div",{style:{fontWeight:"600",fontSize:"11px",color:"#334155"}},lbl);row.append(lblSpan);const badgeWrap=h("div",{style:{display:"flex",gap:"4px"}});if(meta.isDerived){badgeWrap.append(h("span",{className:"field-type-badge field-type-derived"},"derived"))}else{badgeWrap.append(h("span",{className:"field-type-badge field-type-input"},"input"))}if(meta.isRequired===true){badgeWrap.append(h("span",{style:{fontSize:"9px",color:"#dc2626",fontWeight:"600"}},"*"))}row.append(badgeWrap);const descCol=h("div");if(desc){descCol.append(h("div",{className:"legend-desc"},desc))}descCol.append(h("div",{className:"legend-example"},example));row.append(descCol);frag.append(row)});return frag}
 
 // Detection order: most specific conventions first
 const _DETECT_ORDER=["kmz","guide","permit","fdot-prod-ph","fdot-prod","design","fpid-doc","fpid-doc-ext","program-doc"];
@@ -815,11 +820,17 @@ function renderConventions(){
         lfWrap.append(lfRow);detail.append(lfWrap)
       }
 
-      // Pattern
+      // Visual Pattern with colored segments
       const patWrap=h("div",{style:{marginBottom:"12px"}});
-      patWrap.append(h("span",{style:{fontSize:"10px",fontWeight:"700",letterSpacing:".07em",textTransform:"uppercase",color:"#475569",display:"block",marginBottom:"6px"}},"Name Pattern"));
-      patWrap.append(h("div",{className:"mono",style:{fontSize:"12px",fontWeight:"500",color:"#334155",background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:"6px",padding:"10px 12px",lineHeight:"1.8",wordBreak:"break-all"}},buildExpectedPattern(c)));
+      patWrap.append(h("span",{style:{fontSize:"10px",fontWeight:"700",letterSpacing:".07em",textTransform:"uppercase",color:"#475569",display:"block",marginBottom:"6px"}},"Visual Pattern"));
+      patWrap.append(renderPatternVisual(c));
       detail.append(patWrap);
+
+      // Field Legend
+      const legendWrap=h("div",{style:{marginBottom:"12px"}});
+      legendWrap.append(h("span",{style:{fontSize:"10px",fontWeight:"700",letterSpacing:".07em",textTransform:"uppercase",color:"#475569",display:"block",marginBottom:"6px"}},"Field Reference"));
+      legendWrap.append(renderPatternLegend(c));
+      detail.append(legendWrap);
 
       detail.append(h("div",{style:{display:"flex",gap:"16px",fontSize:"11px",color:"#64748b",flexWrap:"wrap"}},
         h("span",null,"Extension: ",h("strong",{style:{color:"#334155"}},"."+c.ext))));
