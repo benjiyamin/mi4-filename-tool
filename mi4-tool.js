@@ -318,7 +318,7 @@ function buildExpectedPattern(conv){
 }
 
 // ═══════ STATE ═══════
-let state={view:"main",mode:"generator",convention:"",title:"",subTitle:"",fpidShort:"",project:"",component:"",submittalPhase:"",submittalIdRaw:"",isResubmittal:false,resubmittalIdRaw:"",formattedDate:"",customIdFormat:"",customIdValue:"",externalFpidRaw:"",revisionIdRaw:"",valFilename:"",valConvOverride:"",valExpandedSeg:null,abbrSearch:"",convExpanded:null,acFocused:false,acHighlightIdx:-1,copied:false,patternCopied:false};
+let state={view:"main",mode:"generator",convention:FILTERED_CONVENTIONS.length===1?FILTERED_CONVENTIONS[0].id:"",title:"",subTitle:"",fpidShort:"",project:"",component:"",submittalPhase:"",submittalIdRaw:"",isResubmittal:false,resubmittalIdRaw:"",formattedDate:"",customIdFormat:"",customIdValue:"",externalFpidRaw:"",revisionIdRaw:"",valFilename:"",valConvOverride:"",valExpandedSeg:null,abbrSearch:"",convExpanded:null,acFocused:false,acHighlightIdx:-1,copied:false,patternCopied:false};
 
 let _restoring=false;
 function setState(patch){
