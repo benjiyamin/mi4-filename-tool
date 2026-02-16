@@ -7,7 +7,8 @@ const CONVENTIONS = [
     ext: "kmz",
     format: "{projectId}_{fpid}_{title}[-{subtitle}]_{date}",
     info: "Google Earth project mapping files \u2014 exported KMZ overlays, alignments, and project boundaries.",
-    exampleName: "P3_201210-9_ProjectLimits_2025-01-15.kmz"
+    exampleName: "P3_201210-9_ProjectLimits_2025-01-15.kmz",
+    phase: "pre"
   },
   {
     id: "fdot-prod",
@@ -16,7 +17,8 @@ const CONVENTIONS = [
     ext: "pdf",
     format: "{fullFpid}-{deliverableId}[-{revisionId}]",
     info: "Final plan sheet deliverables submitted to FDOT \u2014 one file per discipline, no phase suffix.",
-    exampleName: "20121095201-PLANS-01-ROADWAY.pdf"
+    exampleName: "20121095201-PLANS-01-ROADWAY.pdf",
+    phase: "pre"
   },
   {
     id: "fdot-prod-ph",
@@ -25,7 +27,8 @@ const CONVENTIONS = [
     ext: "pdf",
     format: "{fullFpid}-{deliverableId}-{phaseId}",
     info: "Same as Production Deliverables but for phased submittals \u2014 includes a submittal phase suffix.",
-    exampleName: "20121095201-PLANS-01-ROADWAY-90pct.pdf"
+    exampleName: "20121095201-PLANS-01-ROADWAY-90pct.pdf",
+    phase: "pre"
   },
   {
     id: "guide",
@@ -34,7 +37,8 @@ const CONVENTIONS = [
     ext: "pdf",
     format: "{fullFpid}-GuideSignWorksheets",
     info: "Guide sign design worksheets submitted with the full 11-digit FPID identifier.",
-    exampleName: "20121095201-GuideSignWorksheets.pdf"
+    exampleName: "20121095201-GuideSignWorksheets.pdf",
+    phase: "pre"
   },
   {
     id: "design",
@@ -43,7 +47,8 @@ const CONVENTIONS = [
     ext: "pdf",
     format: "{projectId}-{submittalPrefix}-{submittalId}.{resubmittalId}_{title}[-{subtitle}]",
     info: "Design documents tracked by project, phase, and submittal number \u2014 reports, calculations, memos, and analysis packages.",
-    exampleName: "P3-PS-0001.00_PvmtDsgnRpt.pdf"
+    exampleName: "P3-PS-0001.00_PvmtDsgnRpt.pdf",
+    phase: "post"
   },
   {
     id: "fpid-doc",
@@ -52,7 +57,8 @@ const CONVENTIONS = [
     ext: "pdf",
     format: "{fpid}_{title}[-{subtitle}]",
     info: "General project documents identified by short FPID \u2014 correspondence, approvals, and miscellaneous deliverables.",
-    exampleName: "201210-9_TypSectionPkg.pdf"
+    exampleName: "201210-9_TypSectionPkg.pdf",
+    phase: "pre"
   },
   {
     id: "permit",
@@ -61,7 +67,8 @@ const CONVENTIONS = [
     ext: "pdf",
     format: "{permitId}_Permit-{permitCode}",
     info: "Permit documents filed by agency permit number \u2014 ERP, NPDES, Section 404, Biological Opinions, and dewatering permits.",
-    exampleName: "50-12345-P_Permit-SFWMD-ERP.pdf"
+    exampleName: "50-12345-P_Permit-SFWMD-ERP.pdf",
+    phase: "pre"
   },
   {
     id: "fpid-doc-ext",
@@ -70,7 +77,8 @@ const CONVENTIONS = [
     ext: "pdf",
     format: "{externalFpid}_{title}[-{subtitle}]",
     info: "External project documents identified by a non-MI4 FPID number in ######-# format.",
-    exampleName: "201210-3_NEPADocs.pdf"
+    exampleName: "201210-3_NEPADocs.pdf",
+    phase: "pre"
   },
   {
     id: "program-doc",
@@ -79,7 +87,8 @@ const CONVENTIONS = [
     ext: "pdf",
     format: "MI4_{title}[-{subtitle}]",
     info: "Program-level documents not tied to a specific FPID \u2014 prefixed with MI4.",
-    exampleName: "MI4_InterimDrngTypSection.pdf"
+    exampleName: "MI4_InterimDrngTypSection.pdf",
+    phase: "pre"
   }
 ];
 
