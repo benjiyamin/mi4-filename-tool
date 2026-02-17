@@ -324,7 +324,20 @@ const TITLE_SUGGESTIONS = [
   "ITS Geotechnical Report",
   "Lighting Geotechnical Report",
   "Sub-Surface Utility Location Form (mast arm)",
-  "Architectural Geotechnical Investigation Report"
+  "Architectural Geotechnical Investigation Report",
+  "Erosion Control Plan",
+  "Air Quality Analysis Technical Memorandum",
+  "Concept of Operations",
+  "Cultural Resource Assessment",
+  "Contamination Screening Evaluation Report",
+  "Conceptual Stage Relocation Plan",
+  "Endangered Species Biological Assessment",
+  "Noise Study Report",
+  "Preliminary Engineering Report",
+  "Pavement Type Selection Report",
+  "Systems Access Modification Report",
+  "Utility Impact Report",
+  "Wetland Evaluation Report"
 ];
 
 // ═══════ TITLE PSEE FOLDERS ═══════
@@ -419,6 +432,22 @@ const TITLE_PSEE_MAP = {
   "Lighting Geotechnical Report": "Geotech",
   "Structures Geotechnical Report": "Geotech",
   "Architectural Geotechnical Investigation Report": "Geotech"
+};
+
+// ═══════ TITLE SWEPT FOLDERS ═══════
+const TITLE_SWEPT_MAP = {
+  "Air Quality Analysis Technical Memorandum": "Air Quality",
+  "Concept of Operations": "Engineering",
+  "Cultural Resource Assessment": "Cultural Resources",
+  "Contamination Screening Evaluation Report": "Contamination",
+  "Conceptual Stage Relocation Plan": "Sociocultural Effects",
+  "Endangered Species Biological Assessment": "Protected Species",
+  "Noise Study Report": "Noise",
+  "Preliminary Engineering Report": "Engineering",
+  "Pavement Type Selection Report": "Engineering",
+  "Systems Access Modification Report": "Engineering",
+  "Utility Impact Report": "Utilities",
+  "Wetland Evaluation Report": "Wetlands"
 };
 
 // ═══════ FIELDS ═══════
