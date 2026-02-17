@@ -45,9 +45,9 @@ const CONVENTIONS = [
     desc: "Design Submittal",
     exampleDoc: "DocumentName",
     ext: "pdf",
-    format: "{projectId}-{submittalPrefix}-{submittalId}.{resubmittalId}_{title}[-{subtitle}]",
+    format: "{projectId}-{submittalId}.{resubmittalId}-{submittalPrefix}_{title}[-{subtitle}][-{phaseMod}]",
     info: "Design documents tracked by project, phase, and submittal number \u2014 reports, calculations, memos, and analysis packages.",
-    exampleName: "P3-PS-0001.00_PvmtDsgnRpt.pdf",
+    exampleName: "P3-0001.00-PS_PvmtDsgnRpt.pdf",
     phase: "post"
   },
   {
@@ -192,21 +192,19 @@ const FPIDS = [
 
 // ═══════ SUBMITTAL PHASES ═══════
 const SUBMITTAL_PHASES = [
-  { desc: "Prelim Engineering - Line and Grade", prefix: "", suffix: "15pct" },
-  { desc: "Prelim Engineering - Phase 1", prefix: "", suffix: "30pct" },
-  { desc: "Prelim Engineering - Phase 1A", prefix: "", suffix: "30Apct" },
-  { desc: "Prelim Engineering - Phase 2", prefix: "", suffix: "45pct" },
-  { desc: "Design - Phase Submittal (60%)", prefix: "PS", suffix: "60pct" },
-  { desc: "Design - Phase Submittal (90%)", prefix: "PS", suffix: "90pct" },
-  { desc: "Design - Final Submittal (100%)", prefix: "FS", suffix: "Final" },
-  { desc: "Design - Released for Construction", prefix: "RC", suffix: "RFC" },
-  { desc: "Design - Project Documentation", prefix: "PD", suffix: "-" },
-  { desc: "Design - Shop Drawing", prefix: "SD", suffix: "-" },
-  { desc: "Design - Contract Submittal", prefix: "CS", suffix: "-" },
-  { desc: "Design - Courtesy Review", prefix: "CR", suffix: "-" },
-  { desc: "Design - Field Correction Request", prefix: "FCR", suffix: "-" },
-  { desc: "Design - Request for Information", prefix: "RFI", suffix: "-" },
-  { desc: "Design - Request for Modification", prefix: "RFM", suffix: "-" }
+  { desc: "Prelim Engineering - Line and Grade", prefix: "", defaultPhase: "15pct" },
+  { desc: "Prelim Engineering - Phase 1", prefix: "", defaultPhase: "30pct" },
+  { desc: "Prelim Engineering - Phase 1A", prefix: "", defaultPhase: "30Apct" },
+  { desc: "Prelim Engineering - Phase 2", prefix: "", defaultPhase: "45pct" },
+  { desc: "Design - Phase Submittal (90%)", prefix: "PS", defaultPhase: "90pct", modifiers: ["30pct", "60pct"] },
+  { desc: "Design - Final Submittal (100%)", prefix: "FS", defaultPhase: "Final", modifiers: ["RFC"] },
+  { desc: "Design - Project Documentation", prefix: "PD", defaultPhase: "-" },
+  { desc: "Design - Shop Drawing", prefix: "SD", defaultPhase: "-" },
+  { desc: "Design - Contract Submittal", prefix: "CS", defaultPhase: "-" },
+  { desc: "Design - Courtesy Review", prefix: "CR", defaultPhase: "-" },
+  { desc: "Design - Field Correction Request", prefix: "FCR", defaultPhase: "-" },
+  { desc: "Design - Request for Information", prefix: "RFI", defaultPhase: "-" },
+  { desc: "Design - Request for Modification", prefix: "RFM", defaultPhase: "-" }
 ];
 
 // ═══════ COMPONENTS ═══════
@@ -440,10 +438,11 @@ const FIELDS = [
   { id: "submittal", name: "Submittal", type: "select", validates: "SUBMITTAL_PHASES", validatesKey: "desc" },
   { id: "fullFpid", name: "Full FPID", type: "lookup", source: "FPIDS", sourceKey: "fpid", via: "fpid", returns: "full" },
   { id: "deliverableId", name: "Deliverable ID", type: "lookup", source: "COMPONENTS", sourceKey: "name", via: "deliverable", returns: "id" },
-  { id: "phaseId", name: "Phase ID", type: "lookup", source: "SUBMITTAL_PHASES", sourceKey: "desc", via: "submittal", returns: "suffix" },
+  { id: "phaseId", name: "Phase ID", type: "lookup", source: "SUBMITTAL_PHASES", sourceKey: "desc", via: "submittal", returns: "defaultPhase" },
   { id: "projectId", name: "Project ID", type: "lookup", source: "PROJECTS", sourceKey: "name", via: "project", returns: "abbr" },
   { id: "submittalPrefix", name: "Submittal Prefix", type: "lookup", source: "SUBMITTAL_PHASES", sourceKey: "desc", via: "submittal", returns: "prefix" },
-  { id: "permitCode", name: "Permit Code", type: "lookup", source: "PERMITS", sourceKey: "name", via: "permit", returns: "code" }
+  { id: "permitCode", name: "Permit Code", type: "lookup", source: "PERMITS", sourceKey: "name", via: "permit", returns: "code" },
+  { id: "phaseMod", name: "Phase Modifier", type: "text" }
 ];
 
 // ═══════ RULES ═══════
@@ -472,6 +471,7 @@ const RULES = [
   { convention: "design", field: "resubmittalId", required: false },
   { convention: "design", field: "title", required: true },
   { convention: "design", field: "subtitle", required: false },
+  { convention: "design", field: "phaseMod", required: false },
   { convention: "design", field: "projectId" },
   { convention: "design", field: "submittalPrefix" },
   { convention: "fpid-doc", field: "fpid", required: true },

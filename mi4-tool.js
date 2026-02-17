@@ -3,7 +3,7 @@ const ALL_FPID_FULLS=new Set(FPIDS.map(f=>f.full));
 const ALL_PROJECT_ABBRS=new Set(PROJECTS.map(p=>p.abbr));
 const ALL_FPID_SHORTS=new Set(FPIDS.map(f=>f.fpid));
 const ALL_COMPONENT_IDS=new Set(COMPONENTS.map(c=>c.id));
-const ALL_SUFFIXES=new Set(SUBMITTAL_PHASES.map(s=>s.suffix).filter(s=>s&&s!=="-"));
+const ALL_SUFFIXES=new Set(SUBMITTAL_PHASES.map(s=>s.defaultPhase).filter(s=>s&&s!=="-"));
 const ALL_PERMIT_CODES=new Set(PERMITS.map(p=>p.code));
 const FIELD_MAP=Object.fromEntries(FIELDS.map(f=>[f.id,f]));
 const RULES_BY_CONV={};for(const r of RULES){if(!RULES_BY_CONV[r.convention])RULES_BY_CONV[r.convention]=[];RULES_BY_CONV[r.convention].push(r)}
@@ -11,10 +11,11 @@ const _DETERMINATION=(new URLSearchParams(window.location.search)).get("determin
 const FILTERED_CONVENTIONS=_DETERMINATION?CONVENTIONS.filter(c=>c.phase===_DETERMINATION):CONVENTIONS;
 const _FILTERED_IDS=new Set(FILTERED_CONVENTIONS.map(c=>c.id));
 const ALL_SUBMITTAL_PREFIXES=new Set(SUBMITTAL_PHASES.map(s=>s.prefix).filter(Boolean));
+const ALL_PHASE_MODS=new Set(SUBMITTAL_PHASES.flatMap(s=>s.modifiers||[]));
 const DATE_RE=/^\d{4}-\d{2}-\d{2}(?!\d)/;
 const EXTERNAL_FPID_RE=/^\d{6}-\d(?!\d)/;
 const SEG_COLORS=["#7c3aed","#0891b2","#059669","#ca8a04","#dc2626","#2563eb","#9333ea","#e11d48"];
-const SEG_EXPLAIN={"Extension":"The file extension must match the convention (.pdf, .kmz).","FPID (Full)":"An 11-digit code identifying the Financial Project ID.","FPID (Short)":"The standard FPID format (######-#) used in FDOT project tracking.","Project ID":"A short abbreviation (P1\u2013P5, PA, PB) mapped from the project name.","Deliverable ID":"A structured identifier for the plan discipline, e.g. PLANS-01-ROADWAY.","Submittal Suffix":"Indicates the submittal phase: 15pct, 30pct, 60pct, 90pct, Final, or RFC.","Submittal Prefix":"The phase prefix (PS, FS, RC, etc.) identifying the submittal stage.","Submittal ID":"A 4-digit sequential number identifying the submittal (e.g. 0001).","Resubmittal ID":"A 2-digit resubmittal number (e.g. 00 for original, 01 for first resubmittal).","Document Name":"The document title, PascalCased and abbreviated per the abbreviation table.","Document Name (Sub)":"An optional sub-title appended to the document name with a hyphen.","Formatted Date":"Date in YYYY-MM-DD format.","Custom ID":"The permit number matching the selected permit type's format.","Permit Code":"The permit agency and type code (e.g. SFWMD-ERP, USACE-404).","External FPID":"A non-MI4 Financial Project ID in ######-# format.","Revision ID":"Revision number in REVnn format (e.g. REV01).","Program Prefix":"The fixed prefix \u2018MI4\u2019 identifying program-level documents.","Fixed Suffix":"The fixed suffix \u2018GuideSignWorksheets\u2019 for guide sign deliverables.","Unexpected":"Extra segments that don't belong in this convention's pattern."};
+const SEG_EXPLAIN={"Extension":"The file extension must match the convention (.pdf, .kmz).","FPID (Full)":"An 11-digit code identifying the Financial Project ID.","FPID (Short)":"The standard FPID format (######-#) used in FDOT project tracking.","Project ID":"A short abbreviation (P1\u2013P5, PA, PB) mapped from the project name.","Deliverable ID":"A structured identifier for the plan discipline, e.g. PLANS-01-ROADWAY.","Submittal Suffix":"Indicates the submittal phase: 15pct, 30pct, 45pct, 90pct, or Final.","Submittal Prefix":"The phase prefix (PS, FS, PD, etc.) identifying the submittal stage.","Phase Modifier":"An optional modifier indicating an alternate phase milestone (e.g. 30pct, 60pct, RFC).","Submittal ID":"A 4-digit sequential number identifying the submittal (e.g. 0001).","Resubmittal ID":"A 2-digit resubmittal number (e.g. 00 for original, 01 for first resubmittal).","Document Name":"The document title, PascalCased and abbreviated per the abbreviation table.","Document Name (Sub)":"An optional sub-title appended to the document name with a hyphen.","Formatted Date":"Date in YYYY-MM-DD format.","Custom ID":"The permit number matching the selected permit type's format.","Permit Code":"The permit agency and type code (e.g. SFWMD-ERP, USACE-404).","External FPID":"A non-MI4 Financial Project ID in ######-# format.","Revision ID":"Revision number in REVnn format (e.g. REV01).","Program Prefix":"The fixed prefix \u2018MI4\u2019 identifying program-level documents.","Fixed Suffix":"The fixed suffix \u2018GuideSignWorksheets\u2019 for guide sign deliverables.","Unexpected":"Extra segments that don't belong in this convention's pattern."};
 
 // Format string tokenizer: parses "{field}" "[" "]" and literal text
 function tokenizeFormat(fmt){
@@ -44,7 +45,8 @@ const FIELD_VALIDATORS={
   date:{regex:DATE_RE,label:"Formatted Date"},
   title:{greedy:true,label:"Document Name"},
   subtitle:{greedy:true,label:"Document Name (Sub)"},
-  permitId:{greedy:true,label:"Custom ID",postValidate:true}
+  permitId:{greedy:true,label:"Custom ID",postValidate:true},
+  phaseMod:{set:ALL_PHASE_MODS,label:"Phase Modifier"}
 };
 
 const FIELD_PLACEHOLDERS={
@@ -53,7 +55,8 @@ const FIELD_PLACEHOLDERS={
   permitCode:"Agency-Type",submittalPrefix:"PS",
   submittalId:"0000",resubmittalId:"00",revisionId:"REVnn",
   externalFpid:"XXXXXX-X",date:"YYYY-MM-DD",
-  title:"DocName",subtitle:"SubName",permitId:"CustomID"
+  title:"DocName",subtitle:"SubName",permitId:"CustomID",
+  phaseMod:"Mod"
 };
 
 function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
@@ -323,7 +326,7 @@ function buildExpectedPattern(conv){
 }
 
 // ═══════ STATE ═══════
-let state={view:"main",mode:"generator",convention:FILTERED_CONVENTIONS.length===1?FILTERED_CONVENTIONS[0].id:"",title:"",subTitle:"",fpidShort:"",project:"",component:"",submittalPhase:"",submittalIdRaw:"",isResubmittal:false,resubmittalIdRaw:"",formattedDate:"",customIdFormat:"",customIdValue:"",externalFpidRaw:"",revisionIdRaw:"",valFilename:"",valConvOverride:"",valExpandedSeg:null,abbrSearch:"",convExpanded:null,acFocused:false,acHighlightIdx:-1,copied:false,patternCopied:false};
+let state={view:"main",mode:"generator",convention:FILTERED_CONVENTIONS.length===1?FILTERED_CONVENTIONS[0].id:"",title:"",subTitle:"",fpidShort:"",project:"",component:"",submittalPhase:"",phaseMod:"",submittalIdRaw:"",isResubmittal:false,resubmittalIdRaw:"",formattedDate:"",customIdFormat:"",customIdValue:"",externalFpidRaw:"",revisionIdRaw:"",valFilename:"",valConvOverride:"",valExpandedSeg:null,abbrSearch:"",convExpanded:null,acFocused:false,acHighlightIdx:-1,copied:false,patternCopied:false};
 
 let _restoring=false;
 function setState(patch){
@@ -413,6 +416,7 @@ function _resolveField(fid,st){
   if(fid==="permit")return st.customIdFormat||"";
   if(fid==="permitId")return st.customIdValue||"";
   if(fid==="submittal")return st.submittalPhase||"";
+  if(fid==="phaseMod")return st.phaseMod||"";
   if(fid==="submittalId")return padId(st.submittalIdRaw,4);
   if(fid==="resubmittalId")return st.isResubmittal?padId(st.resubmittalIdRaw,2):"00";
   if(fid==="revisionId")return formatRevisionId(st.revisionIdRaw);
@@ -449,7 +453,7 @@ function renderGenerator(){
 
   // Convention dropdown
   const convWrap=h("div",{style:{padding:"18px 24px 12px"}});
-  convWrap.append(selectEl("Convention","naming pattern",cid,v=>{setState({convention:v,title:"",subTitle:"",fpidShort:"",project:"",component:"",submittalPhase:"",submittalIdRaw:"",isResubmittal:false,resubmittalIdRaw:"",formattedDate:"",customIdFormat:"",customIdValue:"",externalFpidRaw:"",revisionIdRaw:""})},
+  convWrap.append(selectEl("Convention","naming pattern",cid,v=>{setState({convention:v,title:"",subTitle:"",fpidShort:"",project:"",component:"",submittalPhase:"",phaseMod:"",submittalIdRaw:"",isResubmittal:false,resubmittalIdRaw:"",formattedDate:"",customIdFormat:"",customIdValue:"",externalFpidRaw:"",revisionIdRaw:""})},
     "Choose a naming convention...",FILTERED_CONVENTIONS.map(c=>({value:c.id,label:c.desc}))));
   frag.append(convWrap);
 
@@ -551,7 +555,13 @@ function renderGenerator(){
       // For design convention, submittal has prefix (only show phases with prefix)
       const isDesign=hasField("submittalId");
       const phases=isDesign?SUBMITTAL_PHASES.filter(s=>s.prefix):SUBMITTAL_PHASES;
-      inner.append(selectEl("Submittal Phase",isDesign?"prefix for Design ID":"suffix",state.submittalPhase,v=>setState({submittalPhase:v}),"Select phase...",phases.map(s=>({value:s.desc,label:s.desc+((!isDesign&&s.suffix&&s.suffix!=="-")?" \u2192 "+s.suffix:"")}))));
+      inner.append(selectEl("Submittal Phase",isDesign?"prefix for Design ID":"phase",state.submittalPhase,v=>setState({submittalPhase:v,phaseMod:""}),"Select phase...",phases.map(s=>({value:s.desc,label:s.desc+((!isDesign&&s.defaultPhase&&s.defaultPhase!=="-")?" \u2192 "+s.defaultPhase:"")}))));
+    }
+    else if(fid==="phaseMod"){
+      const selPhase=SUBMITTAL_PHASES.find(s=>s.desc===state.submittalPhase);
+      if(selPhase&&selPhase.modifiers&&selPhase.modifiers.length>0){
+        inner.append(selectEl("Phase Modifier","optional",state.phaseMod,v=>setState({phaseMod:v}),"No modifier",selPhase.modifiers.map(m=>({value:m,label:m}))));
+      }
     }
     else if(fid==="submittalId"){
       rendered.add("resubmittalId");
@@ -575,7 +585,7 @@ function renderGenerator(){
       const resolvedProjectAbbr=_resolveField("projectId",state);
       const resolvedPrefix=_resolveField("submittalPrefix",state);
       if(resolvedProjectAbbr&&resolvedPrefix&&submittalId){
-        const designIdStr=resolvedProjectAbbr+"-"+resolvedPrefix+"-"+submittalId+"."+resubmittalId;
+        const designIdStr=resolvedProjectAbbr+"-"+submittalId+"."+resubmittalId+"-"+resolvedPrefix;
         inner.append(h("div",{className:"design-preview"},h("strong",null,"Design ID preview: "),h("span",{className:"mono",style:{fontSize:"12px",fontWeight:"600",color:"#4c1d95"}},designIdStr)))
       }
     }
@@ -625,7 +635,7 @@ function renderGenerator(){
   hdrL.append(h("span",{style:{fontSize:"11px",fontWeight:"700",letterSpacing:".07em",textTransform:"uppercase",color:isValid?"#166534":generatedName?"#92400e":"#94a3b8"}},"Generated File Name"));
   if(totalCount>0)hdrL.append(h("span",{style:{fontSize:"10px",fontWeight:"600",color:isValid?"#166534":"#92400e",background:isValid?"#dcfce7":"#fef3c7",border:"1px solid "+(isValid?"#bbf7d0":"#fde68a"),borderRadius:"10px",padding:"1px 8px"}},isValid?"\u2713 Valid":filledCount+"/"+totalCount));
   const hdrR=h("div",{style:{display:"flex",gap:"6px"}});
-  hdrR.append(h("button",{className:"sm-btn",style:{color:"#64748b",background:"transparent",borderColor:"#d1d5db"},onClick:()=>setState({convention:"",title:"",subTitle:"",fpidShort:"",project:"",component:"",submittalPhase:"",submittalIdRaw:"",isResubmittal:false,resubmittalIdRaw:"",formattedDate:"",customIdFormat:"",customIdValue:"",externalFpidRaw:"",revisionIdRaw:"",copied:false})},"Reset"));
+  hdrR.append(h("button",{className:"sm-btn",style:{color:"#64748b",background:"transparent",borderColor:"#d1d5db"},onClick:()=>setState({convention:"",title:"",subTitle:"",fpidShort:"",project:"",component:"",submittalPhase:"",phaseMod:"",submittalIdRaw:"",isResubmittal:false,resubmittalIdRaw:"",formattedDate:"",customIdFormat:"",customIdValue:"",externalFpidRaw:"",revisionIdRaw:"",copied:false})},"Reset"));
   if(isValid&&generatedName){
     hdrR.append(h("button",{className:"sm-btn",style:{color:state.copied?"#16a34a":"#2563eb",background:state.copied?"rgba(22,163,74,.07)":"rgba(37,99,235,.07)",borderColor:state.copied?"rgba(22,163,74,.18)":"rgba(37,99,235,.18)"},onClick:()=>{navigator.clipboard.writeText(generatedName);setState({copied:true});setTimeout(()=>setState({copied:false}),1800)}},state.copied?"\u2713 Copied":"Copy"))
   }
