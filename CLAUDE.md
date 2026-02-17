@@ -11,6 +11,10 @@ This is a zero-dependency, framework-free vanilla JavaScript application. The ap
 - **`index.html`** — HTML shell with embedded CSS styles. Loads Google Fonts (DM Sans, JetBrains Mono) and mounts the app into `<div id="app">`.
 - **`mi4-data.js`** — All data constants (`CONVENTIONS`, `ABBREVIATIONS`, `PROJECTS`, `FPIDS`, `SUBMITTAL_PHASES`, `COMPONENTS`, `PERMITS`, `TITLE_SUGGESTIONS`, `TITLE_PSEE_MAP`, `FIELDS`, `RULES`) in readable multi-line format. Edit this file to update project data.
 - **`mi4-tool.js`** — Application logic (utilities, state management, rendering, UI components).
+- **`docs/`** — Supplementary documentation:
+  - `user-guide.md` — End-user guide for the tool's UI features
+  - `naming-conventions.md` — Standalone naming convention reference with all 9 conventions, appendices for projects, FPIDs, components, phases, permits, and abbreviations
+  - `data-update-guide.md` — Step-by-step instructions for editing `mi4-data.js` (adding projects, FPIDs, abbreviations, permits, etc.)
 
 There is no build step, no bundler, no transpilation, and no package.json. The app runs directly in the browser from static files. `index.html` loads `mi4-data.js` before `mi4-tool.js` via `<script>` tags — load order matters.
 
@@ -21,16 +25,16 @@ There is no build step, no bundler, no transpilation, and no package.json. The a
 | Section | Contents |
 |---------|----------|
 | CONVENTIONS | 9 naming convention schemas with format strings |
-| ABBREVIATIONS | ~55 word-to-abbreviation mappings |
+| ABBREVIATIONS | 67 word-to-abbreviation mappings |
 | PROJECTS | 7 project names and abbreviation codes |
 | FPIDS | 13 Financial Project ID records |
 | SUBMITTAL PHASES | 15 phase prefix/suffix definitions |
 | COMPONENTS | 14 plan discipline identifiers |
 | PERMITS | 4 permit types with regex patterns |
-| TITLE SUGGESTIONS | ~89 autocomplete entries for document titles |
-| TITLE PSEE MAP | ~89 title-to-PSEE-folder mappings |
-| FIELDS | ~19 field definitions with types, validation, and lookup chains |
-| RULES | ~38 convention-field bindings with required/optional flags |
+| TITLE SUGGESTIONS | 91 autocomplete entries for document titles |
+| TITLE PSEE MAP | 89 title-to-PSEE-folder mappings |
+| FIELDS | 19 field definitions with types, validation, and lookup chains |
+| RULES | 38 convention-field bindings with required/optional flags |
 
 **`mi4-tool.js`** — Application logic, organized into clearly marked sections:
 
@@ -56,6 +60,7 @@ There is no build step, no bundler, no transpilation, and no package.json. The a
 - **Convention detection**: `detectConvention()` trial-parses the filename against each convention in a specificity order (`_DETECT_ORDER`), returning the first that fully parses.
 - **Data lookups**: Pre-computed `Set` objects (`ALL_FPID_FULLS`, `ALL_PROJECT_ABBRS`, etc.) for O(1) membership checks. `FIELD_MAP` and `RULES_BY_CONV` index `FIELDS` and `RULES` for fast access.
 - **Abbreviations**: `applyAbbreviations()` replaces full words with short forms (longest-first matching), strips special characters, and converts to PascalCase.
+- **Determination filtering**: Each convention has a `phase` property (`"pre"` or `"post"`). The URL query parameter `?determination=pre` or `?determination=post` filters which conventions are available in the UI. When set, only conventions matching that phase are shown in dropdowns and auto-detection. A label badge (e.g., "Pre-Determination") appears in the header. With no parameter, all conventions are shown.
 
 ## Deployment
 
@@ -105,6 +110,7 @@ The 9 naming conventions are defined in `CONVENTIONS[]` (in `mi4-data.js`). Each
 | `format` | Format string defining filename syntax (e.g., `"{projectId}_{fpid}_{title}[-{subtitle}]_{date}"`) |
 | `info` | Description text shown in the UI |
 | `exampleName` | Example filename for reference |
+| `phase` | Determination phase (`"pre"` or `"post"`) — used for `?determination=` query param filtering |
 
 ### Format String Syntax
 
