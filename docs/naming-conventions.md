@@ -129,31 +129,34 @@ Design documents tracked by project, phase, and submittal number — reports, ca
 
 **Pattern:**
 ```
-{projectId}-{submittalPrefix}-{submittalId}.{resubmittalId}_{title}[-{subtitle}].pdf
+{projectId}-{submittalId}.{resubmittalId}-{submittalPrefix}_{title}[-{subtitle}][-{phaseMod}].pdf
 ```
 
 | Segment | Format | Required | Description |
 |---------|--------|----------|-------------|
 | Project ID | `P1`–`P5`, `PA`, `PB` | Yes | Project abbreviation |
-| Submittal Prefix | `PS`, `FS`, `RC`, `PD`, etc. | Yes | Phase prefix (see [Submittal Phases](#submittal-phases)) |
 | Submittal ID | 4 digits, zero-padded | Yes | Sequential submittal number (e.g., `0001`) |
 | Resubmittal ID | 2 digits, zero-padded | No | Resubmittal number (defaults to `00`) |
+| Submittal Prefix | `PS`, `FS`, `PD`, etc. | Yes | Phase prefix (see [Submittal Phases](#submittal-phases)) |
 | Title | PascalCase, abbreviated | Yes | Document name |
 | Subtitle | PascalCase, abbreviated | No | Additional descriptor, hyphen-separated |
+| Phase Modifier | e.g., `30pct`, `60pct`, `RFC` | No | Alternate phase milestone (see [Submittal Phases](#submittal-phases)) |
 
 **Example:**
 ```
-P3-PS-0001.00_PvmtDsgnRpt.pdf
-P3-FS-0012.01_BridgeDvlpRpt-SpanAnalysis.pdf        (with resubmittal and subtitle)
+P3-0001.00-PS_PvmtDsgnRpt.pdf
+P3-0012.01-FS_BridgeDvlpRpt-SpanAnalysis.pdf        (with resubmittal and subtitle)
+P3-0005.00-PS_RdwyDsgnCalcs-60pct.pdf               (with phase modifier)
+P3-0008.00-FS_ConstrDocs-RFC.pdf                    (released for construction modifier)
 ```
 
 **Design ID breakdown:**
 ```
-P3-PS-0001.00
-│  │  │    │
-│  │  │    └─ Resubmittal ID (00 = original)
-│  │  └────── Submittal ID (sequential)
-│  └───────── Submittal Prefix (phase)
+P3-0001.00-PS
+│  │    │  │
+│  │    │  └─ Submittal Prefix (phase)
+│  │    └──── Resubmittal ID (00 = original)
+│  └───────── Submittal ID (sequential)
 └──────────── Project ID
 ```
 
@@ -307,28 +310,27 @@ MI4_InterimDrngTypSection.pdf
 
 ## Appendix D: Submittal Phases
 
-| Phase Description | Prefix | Suffix |
-|------------------|--------|--------|
-| Prelim Engineering - Line and Grade | *(none)* | 15pct |
-| Prelim Engineering - Phase 1 | *(none)* | 30pct |
-| Prelim Engineering - Phase 1A | *(none)* | 30Apct |
-| Prelim Engineering - Phase 2 | *(none)* | 45pct |
-| Design - Phase Submittal (60%) | PS | 60pct |
-| Design - Phase Submittal (90%) | PS | 90pct |
-| Design - Final Submittal (100%) | FS | Final |
-| Design - Released for Construction | RC | RFC |
-| Design - Project Documentation | PD | — |
-| Design - Shop Drawing | SD | — |
-| Design - Contract Submittal | CS | — |
-| Design - Courtesy Review | CR | — |
-| Design - Field Correction Request | FCR | — |
-| Design - Request for Information | RFI | — |
-| Design - Request for Modification | RFM | — |
+| Phase Description | Prefix | Default Phase | Phase Modifiers |
+|------------------|--------|--------------|-----------------|
+| Prelim Engineering - Line and Grade | *(none)* | 15pct | — |
+| Prelim Engineering - Phase 1 | *(none)* | 30pct | — |
+| Prelim Engineering - Phase 1A | *(none)* | 30Apct | — |
+| Prelim Engineering - Phase 2 | *(none)* | 45pct | — |
+| Design - Phase Submittal (90%) | PS | 90pct | 30pct, 60pct |
+| Design - Final Submittal (100%) | FS | Final | RFC |
+| Design - Project Documentation | PD | — | — |
+| Design - Shop Drawing | SD | — | — |
+| Design - Contract Submittal | CS | — | — |
+| Design - Courtesy Review | CR | — | — |
+| Design - Field Correction Request | FCR | — | — |
+| Design - Request for Information | RFI | — | — |
+| Design - Request for Modification | RFM | — | — |
 
-**Prefix** is used in the Design Submittal convention (e.g., `P3-PS-0001.00_Title.pdf`).
-**Suffix** is used in the FDOT Production Deliverables (Phased) convention (e.g., `20121095201-PLANS-01-ROADWAY-90pct.pdf`).
+**Prefix** is used in the Design Submittal convention (e.g., `P3-0001.00-PS_Title.pdf`).
+**Default Phase** is used in the FDOT Production Deliverables (Phased) convention (e.g., `20121095201-PLANS-01-ROADWAY-90pct.pdf`).
+**Phase Modifiers** are optional alternate milestone suffixes available for certain phases in the Design Submittal convention (e.g., a PS submittal delivered at 60% uses modifier `60pct`; an FS package released for construction uses modifier `RFC`).
 
-Phases marked "—" in the Suffix column do not have a phase suffix and are not available for phased deliverables.
+Phases marked "—" in the Default Phase column do not have a phase suffix and are not available for phased deliverables.
 
 ---
 

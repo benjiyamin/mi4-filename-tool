@@ -131,13 +131,15 @@ Each entry has:
 | Field | Description | Example |
 |-------|-------------|---------|
 | `desc` | Display name shown in the dropdown | `"Design - Phase Submittal (90%)"` |
-| `prefix` | Used in Design Submittal filenames (before the ID) | `"PS"` |
-| `suffix` | Used in phased deliverable filenames (after the component) | `"90pct"` |
+| `prefix` | Used in Design Submittal filenames (after the submittal ID) | `"PS"` |
+| `defaultPhase` | Used in phased deliverable filenames (after the component) | `"90pct"` |
+| `modifiers` | Optional array of alternate phase milestones available for this phase | `["30pct", "60pct"]` |
 
 ```js
 const SUBMITTAL_PHASES = [
-  { desc: "Prelim Engineering - Line and Grade", prefix: "", suffix: "15pct" },
-  { desc: "Design - Phase Submittal (90%)", prefix: "PS", suffix: "90pct" },
+  { desc: "Prelim Engineering - Line and Grade", prefix: "", defaultPhase: "15pct" },
+  { desc: "Design - Phase Submittal (90%)", prefix: "PS", defaultPhase: "90pct", modifiers: ["30pct", "60pct"] },
+  { desc: "Design - Final Submittal (100%)", prefix: "FS", defaultPhase: "Final", modifiers: ["RFC"] },
   // ...
 ];
 ```
@@ -145,14 +147,15 @@ const SUBMITTAL_PHASES = [
 **To add a phase**, insert a new object:
 
 ```js
-  { desc: "Design - Supplemental (75%)", prefix: "PS", suffix: "75pct" },
+  { desc: "Design - Supplemental (75%)", prefix: "PS", defaultPhase: "75pct" },
 ```
 
 **Notes:**
-- The `prefix` is used in Design Submittal convention filenames (e.g., `P3-PS-0001.00_Title.pdf`).
-- The `suffix` is used in FDOT Production Deliverables (Phased) filenames (e.g., `20121095201-PLANS-01-ROADWAY-90pct.pdf`).
+- The `prefix` is used in Design Submittal convention filenames (e.g., `P3-0001.00-PS_Title.pdf`).
+- The `defaultPhase` is used in FDOT Production Deliverables (Phased) filenames (e.g., `20121095201-PLANS-01-ROADWAY-90pct.pdf`).
 - Phases with `prefix: ""` (empty string) are Preliminary Engineering phases and won't generate a prefix in Design Submittal filenames.
-- Phases with `suffix: "-"` have no phase suffix and are not available for phased deliverables.
+- Phases with `defaultPhase: "-"` have no phase suffix and are not available for phased deliverables.
+- The optional `modifiers` array lists alternate milestone values selectable via the Phase Modifier field in the Design Submittal generator. For example, a `PS` submittal can carry a `60pct` modifier, and an `FS` submittal can carry an `RFC` modifier.
 
 ---
 
