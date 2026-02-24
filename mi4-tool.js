@@ -14,8 +14,9 @@ const ALL_SUBMITTAL_PREFIXES=new Set(SUBMITTAL_PHASES.map(s=>s.prefix).filter(Bo
 const ALL_PHASE_MODS=new Set(SUBMITTAL_PHASES.flatMap(s=>s.modifiers||[]));
 const DATE_RE=/^\d{4}-\d{2}-\d{2}(?!\d)/;
 const EXTERNAL_FPID_RE=/^\d{6}-\d(?!\d)/;
+const MAX_FILENAME_LEN=48;
 const SEG_COLORS=["#7c3aed","#0891b2","#059669","#ca8a04","#dc2626","#2563eb","#9333ea","#e11d48"];
-const SEG_EXPLAIN={"Extension":"The file extension must match the convention (.pdf, .kmz).","FPID (Full)":"An 11-digit code identifying the Financial Project ID.","FPID (Short)":"The standard FPID format (######-#) used in FDOT project tracking.","Project ID":"A short abbreviation (P1\u2013P5, PA, PB) mapped from the project name.","Deliverable ID":"A structured identifier for the plan discipline, e.g. PLANS-01-ROADWAY.","Submittal Suffix":"Indicates the submittal phase: 15pct, 30pct, 45pct, 90pct, or Final.","Submittal Prefix":"The phase prefix (PS, FS, PD, etc.) identifying the submittal stage.","Phase Modifier":"An optional modifier indicating an alternate phase milestone (e.g. 30pct, 60pct, RFC).","Submittal ID":"A 4-digit sequential number identifying the submittal (e.g. 0001).","Resubmittal ID":"A 2-digit resubmittal number (e.g. 00 for original, 01 for first resubmittal).","Document Name":"The document title, PascalCased and abbreviated per the abbreviation table.","Document Name (Sub)":"An optional sub-title appended to the document name with a hyphen.","Formatted Date":"Date in YYYY-MM-DD format.","Custom ID":"The permit number matching the selected permit type's format.","Permit Code":"The permit agency and type code (e.g. SFWMD-ERP, USACE-404).","External FPID":"A non-MI4 Financial Project ID in ######-# format.","Revision ID":"Revision number in REVnn format (e.g. REV01).","Program Prefix":"The fixed prefix \u2018MI4\u2019 identifying program-level documents.","Fixed Suffix":"The fixed suffix \u2018GuideSignWorksheets\u2019 for guide sign deliverables.","Unexpected":"Extra segments that don't belong in this convention's pattern."};
+const SEG_EXPLAIN={"Extension":"The file extension must match the convention (.pdf, .kmz).","FPID (Full)":"An 11-digit code identifying the Financial Project ID.","FPID (Short)":"The standard FPID format (######-#) used in FDOT project tracking.","Project ID":"A short abbreviation (P1\u2013P5, PA, PB) mapped from the project name.","Deliverable ID":"A structured identifier for the plan discipline, e.g. PLANS-01-ROADWAY.","Submittal Suffix":"Indicates the submittal phase: 15pct, 30pct, 45pct, 90pct, or Final.","Submittal Prefix":"The phase prefix (PS, FS, PD, etc.) identifying the submittal stage.","Phase Modifier":"An optional modifier indicating an alternate phase milestone (e.g. 30pct, 60pct, RFC).","Submittal ID":"A 4-digit sequential number identifying the submittal (e.g. 0001).","Resubmittal ID":"A 2-digit resubmittal number (e.g. 00 for original, 01 for first resubmittal).","Document Name":"The document title, PascalCased and abbreviated per the abbreviation table.","Document Name (Sub)":"An optional sub-title appended to the document name with a hyphen.","Formatted Date":"Date in YYYY-MM-DD format.","Custom ID":"The permit number matching the selected permit type's format.","Permit Code":"The permit agency and type code (e.g. SFWMD-ERP, USACE-404).","External FPID":"A non-MI4 Financial Project ID in ######-# format.","Revision ID":"Revision number in REVnn format (e.g. REV01).","Program Prefix":"The fixed prefix \u2018MI4\u2019 identifying program-level documents.","Fixed Suffix":"The fixed suffix \u2018GuideSignWorksheets\u2019 for guide sign deliverables.","Unexpected":"Extra segments that don't belong in this convention's pattern.","File Name Length":"The complete file name including extension must not exceed "+MAX_FILENAME_LEN+" characters."};
 
 // Format string tokenizer: parses "{field}" "[" "]" and literal text
 function tokenizeFormat(fmt){
@@ -491,12 +492,15 @@ function renderGenerator(){
     else if(fid==="permitId")fs["Permit ID"]=!!(state.customIdValue&&customIdValid!==false);
     else if(fid==="externalFpid")fs["External FPID"]=!!formatExternalFpid(state.externalFpidRaw);
   }
-  const isValid=Object.values(fs).length>0&&Object.values(fs).every(Boolean);
   const filledCount=Object.values(fs).filter(Boolean).length;
   const totalCount=Object.values(fs).length;
+  const fieldsComplete=Object.values(fs).length>0&&Object.values(fs).every(Boolean);
 
   // Generate filename using format string
   const generatedName=generateFilename(conv,state);
+  const nameLen=generatedName?generatedName.length:0;
+  const overLimit=generatedName&&nameLen>MAX_FILENAME_LEN;
+  const isValid=fieldsComplete&&!overLimit;
 
   // Fields section
   const fields=h("div",{style:{padding:"16px 24px 20px",borderTop:"1px solid #edf0f4"}});
@@ -628,25 +632,26 @@ function renderGenerator(){
   fields.append(inner);frag.append(fields);
 
   // Output
-  const outBg=isValid?"linear-gradient(135deg,#f0fdf4,#ecfdf5)":generatedName?"#fffbeb":"#f9fafb";
+  const outBg=isValid?"linear-gradient(135deg,#f0fdf4,#ecfdf5)":overLimit?"linear-gradient(135deg,#fef2f2,#fff1f2)":generatedName?"#fffbeb":"#f9fafb";
   const out=h("div",{style:{borderTop:"1px solid #edf0f4",background:outBg,padding:"14px 24px 18px"}});
   const hdr=h("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"8px"}});
   const hdrL=h("div",{style:{display:"flex",alignItems:"center",gap:"8px"}});
-  hdrL.append(h("span",{style:{fontSize:"11px",fontWeight:"700",letterSpacing:".07em",textTransform:"uppercase",color:isValid?"#166534":generatedName?"#92400e":"#94a3b8"}},"Generated File Name"));
-  if(totalCount>0)hdrL.append(h("span",{style:{fontSize:"10px",fontWeight:"600",color:isValid?"#166534":"#92400e",background:isValid?"#dcfce7":"#fef3c7",border:"1px solid "+(isValid?"#bbf7d0":"#fde68a"),borderRadius:"10px",padding:"1px 8px"}},isValid?"\u2713 Valid":filledCount+"/"+totalCount));
+  hdrL.append(h("span",{style:{fontSize:"11px",fontWeight:"700",letterSpacing:".07em",textTransform:"uppercase",color:isValid?"#166534":overLimit?"#991b1b":generatedName?"#92400e":"#94a3b8"}},"Generated File Name"));
+  if(totalCount>0)hdrL.append(h("span",{style:{fontSize:"10px",fontWeight:"600",color:isValid?"#166534":overLimit?"#991b1b":"#92400e",background:isValid?"#dcfce7":overLimit?"#fecaca":"#fef3c7",border:"1px solid "+(isValid?"#bbf7d0":overLimit?"#fca5a5":"#fde68a"),borderRadius:"10px",padding:"1px 8px"}},isValid?"\u2713 Valid":overLimit?"\u2717 Too Long":filledCount+"/"+totalCount));
   const hdrR=h("div",{style:{display:"flex",gap:"6px"}});
   hdrR.append(h("button",{className:"sm-btn",style:{color:"#64748b",background:"transparent",borderColor:"#d1d5db"},onClick:()=>setState({convention:"",title:"",subTitle:"",fpidShort:"",project:"",component:"",submittalPhase:"",phaseMod:"",submittalIdRaw:"",isResubmittal:false,resubmittalIdRaw:"",formattedDate:"",customIdFormat:"",customIdValue:"",externalFpidRaw:"",revisionIdRaw:"",copied:false})},"Reset"));
   if(isValid&&generatedName){
     hdrR.append(h("button",{className:"sm-btn",style:{color:state.copied?"#16a34a":"#2563eb",background:state.copied?"rgba(22,163,74,.07)":"rgba(37,99,235,.07)",borderColor:state.copied?"rgba(22,163,74,.18)":"rgba(37,99,235,.18)"},onClick:()=>{navigator.clipboard.writeText(generatedName);setState({copied:true});setTimeout(()=>setState({copied:false}),1800)}},state.copied?"\u2713 Copied":"Copy"))
   }
   hdr.append(hdrL,hdrR);out.append(hdr);
-  out.append(h("div",{className:"output-box",style:{color:isValid?"#0f172a":generatedName?"#92400e":"#94a3b8",border:"1.5px solid "+(isValid?"#86efac":generatedName?"#fde68a":"#e2e8f0"),cursor:generatedName?"pointer":"default"},title:generatedName?"Click to copy":"",onClick:()=>{if(generatedName){navigator.clipboard.writeText(generatedName);setState({copied:true});setTimeout(()=>setState({copied:false}),1800)}}},generatedName||"Fill in the required fields above..."));
-  if(generatedName){
-    const meta=h("div",{style:{marginTop:"6px",display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}});
-    meta.append(h("span",{style:{fontSize:"10px",fontWeight:"700",letterSpacing:".06em",textTransform:"uppercase",color:"#475569",background:"#e2e8f0",borderRadius:"4px",padding:"2px 8px",display:"inline-block"}},"."+conv.ext));
-    if(!isValid)meta.append(h("span",{style:{fontSize:"11px",color:"#b45309",fontWeight:"500"}},"\u2014 missing required fields"));
-    out.append(meta)
-  }
+  out.append(h("div",{className:"output-box",style:{color:isValid?"#0f172a":overLimit?"#991b1b":generatedName?"#92400e":"#94a3b8",border:"1.5px solid "+(isValid?"#86efac":overLimit?"#fca5a5":generatedName?"#fde68a":"#e2e8f0"),cursor:isValid?"pointer":"default"},title:isValid?"Click to copy":"",onClick:()=>{if(isValid&&generatedName){navigator.clipboard.writeText(generatedName);setState({copied:true});setTimeout(()=>setState({copied:false}),1800)}}},generatedName||"Fill in the required fields above..."));
+  const countColor=!generatedName?"#94a3b8":overLimit?"#dc2626":nameLen>MAX_FILENAME_LEN-5?"#d97706":"#16a34a";
+  const meta=h("div",{style:{marginTop:"6px",display:"flex",alignItems:"center",gap:"8px",flexWrap:"wrap"}});
+  if(generatedName)meta.append(h("span",{style:{fontSize:"10px",fontWeight:"700",letterSpacing:".06em",textTransform:"uppercase",color:"#475569",background:"#e2e8f0",borderRadius:"4px",padding:"2px 8px",display:"inline-block"}},"."+conv.ext));
+  meta.append(h("span",{className:"mono",style:{fontSize:"11px",fontWeight:"600",color:countColor}},nameLen+"/"+MAX_FILENAME_LEN+" chars"));
+  if(overLimit)meta.append(h("span",{style:{fontSize:"11px",color:"#dc2626",fontWeight:"600"}},"\u2014 exceeds limit by "+(nameLen-MAX_FILENAME_LEN)));
+  else if(generatedName&&!fieldsComplete)meta.append(h("span",{style:{fontSize:"11px",color:"#b45309",fontWeight:"500"}},"\u2014 missing required fields"));
+  out.append(meta);
   frag.append(out);
   return frag
 }
@@ -658,6 +663,9 @@ function renderValidator(){
   const detected=fn.trim()?detectConvention(fn.trim()):null;
   const activeId=co||detected;const activeConv=FILTERED_CONVENTIONS.find(c=>c.id===activeId)||null;
   const result=fn.trim()&&activeId?parseFilename(fn.trim(),activeId):null;
+  const fnLen=fn.trim().length;
+  const fnOverLimit=result&&fnLen>MAX_FILENAME_LEN;
+  if(fnOverLimit){result.segments.push({label:"File Name Length",value:fnLen+" characters",valid:false,expected:MAX_FILENAME_LEN+" characters max",pos:null});result.overall=false}
   const passCount=result?result.segments.filter(s=>s.valid).length:0;
   const totalSegs=result?result.segments.length:0;
 
@@ -681,7 +689,7 @@ function renderValidator(){
     const bL=h("div",{style:{display:"flex",alignItems:"center",gap:"10px"}});
     bL.append(h("span",{style:{fontSize:"20px",width:"32px",height:"32px",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",background:result.overall?"#dcfce7":"#fecaca",border:"2px solid "+(result.overall?"#86efac":"#fca5a5"),flexShrink:"0"}},result.overall?"\u2713":"\u2717"));
     bL.append(h("div",null,h("div",{style:{fontSize:"14px",fontWeight:"700",color:result.overall?"#166534":"#991b1b"}},result.overall?"Valid File Name":"Invalid File Name"),
-      h("div",{style:{fontSize:"11px",color:result.overall?"#15803d":"#b91c1c"}},passCount+"/"+totalSegs+" segments passed \u00B7 "+activeConv?.desc)));
+      h("div",{style:{fontSize:"11px",color:result.overall?"#15803d":"#b91c1c"}},passCount+"/"+totalSegs+" segments passed \u00B7 "+fnLen+"/"+MAX_FILENAME_LEN+" chars \u00B7 "+activeConv?.desc)));
     const bR=h("div",{style:{display:"flex",gap:"6px",alignItems:"center"}});
     if(detected&&!co)bR.append(h("span",{style:{fontSize:"10px",fontWeight:"600",color:"#6366f1",background:"rgba(99,102,241,.08)",border:"1px solid rgba(99,102,241,.18)",borderRadius:"4px",padding:"2px 8px",textTransform:"uppercase"}},"Auto-detected"));
     if(!result.overall)bR.append(h("button",{className:"sm-btn",style:{color:state.patternCopied?"#16a34a":"#7c3aed",background:state.patternCopied?"rgba(22,163,74,.07)":"rgba(124,58,237,.06)",borderColor:state.patternCopied?"rgba(22,163,74,.18)":"rgba(124,58,237,.18)"},onClick:()=>{navigator.clipboard.writeText(buildExpectedPattern(activeConv));setState({patternCopied:true});setTimeout(()=>setState({patternCopied:false}),1800)}},state.patternCopied?"\u2713 Copied":"Copy Pattern"));
@@ -691,7 +699,7 @@ function renderValidator(){
     const psBar=h("div",{style:{padding:"12px 24px",borderBottom:"1px solid #edf0f4",background:"#fafafa"}});
     psBar.append(h("div",{style:{fontSize:"10px",fontWeight:"700",letterSpacing:".07em",textTransform:"uppercase",color:"#475569",marginBottom:"6px"}},"Parsed Structure"));
     const psLine=h("div",{className:"mono",style:{fontSize:"12px",lineHeight:"2",wordBreak:"break-all"}});
-    const nonExt=result.segments.filter(s=>s.label!=="Extension");
+    const nonExt=result.segments.filter(s=>s.label!=="Extension"&&s.label!=="File Name Length");
     const valBase=fn.trim().slice(0,fn.trim().lastIndexOf("."));
     nonExt.forEach((seg,i)=>{
       const color=SEG_COLORS[i%SEG_COLORS.length];
