@@ -898,13 +898,13 @@ function render(){
   if(state.view==="conventions"){app.append(renderConventions());return}
 
   // Header
-  const badge=h("div",{style:{display:"inline-flex",alignItems:"center",gap:"8px",marginBottom:"8px",background:"rgba(59,130,246,.1)",border:"1px solid rgba(59,130,246,.2)",borderRadius:"20px",padding:"4px 14px"}},h("span",{style:{fontSize:"12px",fontWeight:"700",color:"#60a5fa",letterSpacing:".04em"}},"MI-4 Program"));
-  const title=h("h1",{style:{fontSize:"24px",fontWeight:"700",color:"#f1f5f9",margin:"0 0 4px",letterSpacing:"-.02em"}},"File Name Tool");
+  const wordmark=h("div",{style:{fontFamily:"'JetBrains Mono',monospace",fontSize:"30px",fontWeight:"700",color:"#6ee7b7",letterSpacing:".18em",marginBottom:"4px"}},"MINT");
+  const title=h("h1",{style:{fontSize:"15px",fontWeight:"600",color:"#94a3b8",margin:"0 0 12px",letterSpacing:".06em",textTransform:"uppercase"}},"MI-4 Naming Tool");
   const subtitle=h("p",{style:{fontSize:"13px",color:"#64748b",margin:"0 0 12px",lineHeight:"1.5"}},"Generate valid file names or validate existing ones against naming conventions.");
   const navRow=h("div",{style:{display:"flex",justifyContent:"center",gap:"20px",marginBottom:"16px"}});
   navRow.append(h("button",{className:"nav-link",onClick:()=>setState({view:"conventions"})},"View Conventions"));
   navRow.append(h("button",{className:"nav-link",onClick:()=>setState({view:"abbreviations"})},"View Abbreviations"));
-  const hdrWrap=h("div",{style:{textAlign:"center",marginBottom:"6px",maxWidth:"600px"}},badge,title,subtitle,navRow);
+  const hdrWrap=h("div",{style:{textAlign:"center",marginBottom:"6px",maxWidth:"600px"}},wordmark,title,subtitle,navRow);
   app.append(hdrWrap);
   const fb=_filterBanner();if(fb)app.append(fb);
 
