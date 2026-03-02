@@ -1,6 +1,6 @@
-# MI-4 File Name Tool — Data Update Guide
+# MI-4 Naming Tool (MINT) — Data Update Guide
 
-This guide explains how to update the data that drives the MI-4 File Name Tool: projects, FPIDs, abbreviations, naming conventions, submittal phases, deliverable components, permits, and title suggestions.
+This guide explains how to update the data that drives MI-4 Naming Tool (MINT): projects, FPIDs, abbreviations, naming conventions, submittal phases, deliverable components, permits, and title suggestions.
 
 All data lives in a single file: **`mi4-data.js`**. No build step is required — edit the file, save, and refresh the browser.
 

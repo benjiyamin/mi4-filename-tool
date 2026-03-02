@@ -1,6 +1,6 @@
-# MI-4 File Name Tool — User Guide
+# MI-4 Naming Tool (MINT) — User Guide
 
-The MI-4 File Name Tool generates and validates file names for FDOT MI-4 Program deliverables. This guide covers every feature of the tool.
+MI-4 Naming Tool (MINT) generates and validates file names for MI-4 Program naming conventions. This guide covers every feature of the tool.
 
 ## Quick Start
 
@@ -43,7 +43,7 @@ Fields are displayed dynamically based on the selected convention. Each field ha
 | Tag | Meaning |
 |-----|---------|
 | ✓ Done (green) | Field is complete and valid |
-| Pending (blue) | Required field not yet filled |
+| Pending (mint) | Required field not yet filled |
 | Optional (amber) | Optional field — can be left blank |
 
 A progress counter (e.g., "3/5 fields complete") tracks your progress.

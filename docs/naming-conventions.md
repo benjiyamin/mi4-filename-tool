@@ -1,6 +1,6 @@
-# MI-4 File Name Tool — Naming Convention Reference
+# MI-4 Naming Tool (MINT) — Naming Convention Reference
 
-This document defines the FDOT MI-4 Program file naming conventions. It serves as a standalone reference independent of the tool's UI.
+This document defines the MI-4 Program file naming conventions. It serves as a standalone reference independent of the tool's UI.
 
 ---
 
