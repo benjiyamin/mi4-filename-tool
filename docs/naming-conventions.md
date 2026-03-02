@@ -25,7 +25,8 @@ All MI-4 deliverables follow one of 9 naming conventions. The correct convention
 - **Segment separator:** Underscore (`_`) separates major segments. Hyphen (`-`) is used within component-based conventions (FDOT Production Deliverables).
 - **Title formatting:** Titles use PascalCase with standard abbreviations applied (see [Abbreviations](#abbreviations)).
 - **Optional segments:** Shown in square brackets `[...]`. Omit the entire segment (including its separator) when not used.
-- **No spaces or special characters** in any segment.
+- **No spaces or special characters** in any segment. The characters `! @ # $ % ^ & * +` are explicitly prohibited.
+- **Base name length:** The filename excluding its extension must be 48 characters or fewer.
 
 ---
 
@@ -96,7 +97,7 @@ Same as Production Deliverables but for phased submittals — includes a submitt
 
 **Example:**
 ```
-20121095201-PLANS-01-ROADWAY-90pct.pdf
+20121095201-PLANS-01-ROADWAY-90.pdf
 20121095201-PLANS-03-SIGNALIZATION-Final.pdf
 ```
 
@@ -140,13 +141,13 @@ Design documents tracked by project, phase, and submittal number — reports, ca
 | Submittal Prefix | `PS`, `FS`, `PD`, etc. | Yes | Phase prefix (see [Submittal Phases](#submittal-phases)) |
 | Title | PascalCase, abbreviated | Yes | Document name |
 | Subtitle | PascalCase, abbreviated | No | Additional descriptor, hyphen-separated |
-| Phase Modifier | e.g., `30pct`, `60pct`, `RFC` | No | Alternate phase milestone (see [Submittal Phases](#submittal-phases)) |
+| Phase Modifier | e.g., `15`, `30`, `45`, `60`, `RFC` | No | Alternate phase milestone (see [Submittal Phases](#submittal-phases)) |
 
 **Example:**
 ```
 P3-0001.00-PS_PvmtDsgnRpt.pdf
 P3-0012.01-FS_BridgeDvlpRpt-SpanAnalysis.pdf        (with resubmittal and subtitle)
-P3-0005.00-PS_RdwyDsgnCalcs-60pct.pdf               (with phase modifier)
+P3-0005.00-PS_RdwyDsgnCalcs-60.pdf                  (with phase modifier)
 P3-0008.00-FS_ConstrDocs-RFC.pdf                    (released for construction modifier)
 ```
 
@@ -312,23 +313,20 @@ MI4_InterimDrngTypSection.pdf
 
 | Phase Description | Prefix | Default Phase | Phase Modifiers |
 |------------------|--------|--------------|-----------------|
-| Prelim Engineering - Line and Grade | *(none)* | 15pct | — |
-| Prelim Engineering - Phase 1 | *(none)* | 30pct | — |
-| Prelim Engineering - Phase 1A | *(none)* | 30Apct | — |
-| Prelim Engineering - Phase 2 | *(none)* | 45pct | — |
-| Design - Phase Submittal (90%) | PS | 90pct | 30pct, 60pct |
+| Prelim Engineering - Line and Grade | *(none)* | 15 | — |
+| Prelim Engineering - Phase 1 | *(none)* | 30 | — |
+| Prelim Engineering - Phase 1A | *(none)* | 30A | — |
+| Prelim Engineering - Phase 2 | *(none)* | 45 | — |
+| Design - Phase Submittal (90%) | PS | 90 | 15, 30, 45, 60 |
 | Design - Final Submittal (100%) | FS | Final | RFC |
 | Design - Project Documentation | PD | — | — |
 | Design - Shop Drawing | SD | — | — |
 | Design - Contract Submittal | CS | — | — |
 | Design - Courtesy Review | CR | — | — |
-| Design - Field Correction Request | FCR | — | — |
-| Design - Request for Information | RFI | — | — |
-| Design - Request for Modification | RFM | — | — |
 
 **Prefix** is used in the Design Submittal convention (e.g., `P3-0001.00-PS_Title.pdf`).
-**Default Phase** is used in the FDOT Production Deliverables (Phased) convention (e.g., `20121095201-PLANS-01-ROADWAY-90pct.pdf`).
-**Phase Modifiers** are optional alternate milestone suffixes available for certain phases in the Design Submittal convention (e.g., a PS submittal delivered at 60% uses modifier `60pct`; an FS package released for construction uses modifier `RFC`).
+**Default Phase** is used in the FDOT Production Deliverables (Phased) convention (e.g., `20121095201-PLANS-01-ROADWAY-90.pdf`).
+**Phase Modifiers** are optional alternate milestone suffixes available for certain phases in the Design Submittal convention (e.g., a PS submittal delivered at 60% uses modifier `60`; an FS package released for construction uses modifier `RFC`).
 
 Phases marked "—" in the Default Phase column do not have a phase suffix and are not available for phased deliverables.
 

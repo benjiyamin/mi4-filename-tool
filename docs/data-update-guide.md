@@ -28,6 +28,7 @@ All data lives in a single file: **`mi4-data.js`**. No build step is required �
 | Permits | `PERMITS` | Permit types with format validation rules |
 | Title Suggestions | `TITLE_SUGGESTIONS` | Autocomplete entries for document titles |
 | Title PSEE Map | `TITLE_PSEE_MAP` | Maps title suggestions to PSEE folder names |
+| Title SWEPT Map | `TITLE_SWEPT_MAP` | Maps environmental/SWEPT title suggestions to SWEPT folder names |
 | Fields | `FIELDS` | Field definitions (advanced — rarely edited) |
 | Rules | `RULES` | Convention-to-field mappings (advanced — rarely edited) |
 
@@ -137,8 +138,8 @@ Each entry has:
 
 ```js
 const SUBMITTAL_PHASES = [
-  { desc: "Prelim Engineering - Line and Grade", prefix: "", defaultPhase: "15pct" },
-  { desc: "Design - Phase Submittal (90%)", prefix: "PS", defaultPhase: "90pct", modifiers: ["30pct", "60pct"] },
+  { desc: "Prelim Engineering - Line and Grade", prefix: "", defaultPhase: "15" },
+  { desc: "Design - Phase Submittal (90%)", prefix: "PS", defaultPhase: "90", modifiers: ["15", "30", "45", "60"] },
   { desc: "Design - Final Submittal (100%)", prefix: "FS", defaultPhase: "Final", modifiers: ["RFC"] },
   // ...
 ];
@@ -147,15 +148,15 @@ const SUBMITTAL_PHASES = [
 **To add a phase**, insert a new object:
 
 ```js
-  { desc: "Design - Supplemental (75%)", prefix: "PS", defaultPhase: "75pct" },
+  { desc: "Design - Supplemental (75%)", prefix: "PS", defaultPhase: "75" },
 ```
 
 **Notes:**
 - The `prefix` is used in Design Submittal convention filenames (e.g., `P3-0001.00-PS_Title.pdf`).
-- The `defaultPhase` is used in FDOT Production Deliverables (Phased) filenames (e.g., `20121095201-PLANS-01-ROADWAY-90pct.pdf`).
+- The `defaultPhase` is used in FDOT Production Deliverables (Phased) filenames (e.g., `20121095201-PLANS-01-ROADWAY-90.pdf`).
 - Phases with `prefix: ""` (empty string) are Preliminary Engineering phases and won't generate a prefix in Design Submittal filenames.
 - Phases with `defaultPhase: "-"` have no phase suffix and are not available for phased deliverables.
-- The optional `modifiers` array lists alternate milestone values selectable via the Phase Modifier field in the Design Submittal generator. For example, a `PS` submittal can carry a `60pct` modifier, and an `FS` submittal can carry an `RFC` modifier.
+- The optional `modifiers` array lists alternate milestone values selectable via the Phase Modifier field in the Design Submittal generator. For example, a `PS` submittal can carry a `60` modifier, and an `FS` submittal can carry an `RFC` modifier.
 
 ---
 
@@ -257,6 +258,23 @@ const TITLE_PSEE_MAP = {
 ```
 
 Existing PSEE folder categories: `Approvals`, `Roadway`, `Drainage`, `S&PM`, `Signals`, `ITS`, `Lighting`, `Landscape`, `Structures`, `Tolls`, `Architectural`, `Geotech`.
+
+### SWEPT Folder Mapping
+
+The `TITLE_SWEPT_MAP` object maps environmental/SWEPT title suggestions to their SWEPT folder. If you add an environmental title to `TITLE_SUGGESTIONS`, also add a corresponding entry here:
+
+```js
+const TITLE_SWEPT_MAP = {
+  "Air Quality Analysis Technical Memorandum": "Air Quality",
+  "Noise Study Report": "Noise",
+  // ...
+  "New Environmental Report": "Engineering",  // add this
+};
+```
+
+Existing SWEPT folder categories: `Air Quality`, `Engineering`, `Cultural Resources`, `Contamination`, `Sociocultural Effects`, `Protected Species`, `Noise`, `Wetlands`, `Utilities`.
+
+> **Note:** Not all title suggestions need a SWEPT mapping. Only add entries for titles that correspond to SWEPT deliverables.
 
 ---
 
