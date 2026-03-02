@@ -82,6 +82,17 @@ As you fill in fields, the generated filename appears in a preview bar at the bo
 
 ![Filename preview](images/generator-preview.png)
 
+### File Checks
+
+Below the preview, a **File Checks** section reports two additional validations:
+
+| Check | Pass Condition |
+|-------|---------------|
+| Base name length | Base filename (excluding extension) is 48 characters or fewer |
+| Special characters | No prohibited characters (`! @ # $ % ^ & * +`) in the filename |
+
+Each check shows ✓ (green) when passing or ✗ (red) when failing, with details such as `32/48 chars` or `found: !`. The **Copy** button is disabled until both checks pass.
+
 ### Copying the Filename
 
 Click the **Copy** button (or click the filename itself) to copy it to your clipboard. The button briefly shows "✓ Copied" to confirm.
@@ -142,6 +153,17 @@ Click a card to see a detailed explanation of what the segment represents and it
 
 ![Segment analysis](images/validator-segment-analysis.png)
 
+#### File Checks
+
+A **File Checks** bar appears above the segment analysis and reports two validations independent of convention parsing:
+
+| Check | Pass Condition |
+|-------|---------------|
+| Base name length | Base filename (excluding extension) is 48 characters or fewer |
+| Special characters | No prohibited characters (`! @ # $ % ^ & * +`) in the filename |
+
+If either check fails, the overall result is marked **✗ Invalid File Name** even if all segments parse correctly.
+
 #### Comparison View (Invalid Filenames)
 
 When a filename is invalid, a side-by-side comparison shows:
@@ -157,7 +179,7 @@ A **Copy Pattern** button lets you copy the expected format to your clipboard.
 
 ## Abbreviations Tab
 
-Click **View Abbreviations** in the header to open the abbreviation reference table. This shows all ~55 word-to-abbreviation mappings used by the title auto-abbreviation system.
+Click **View Abbreviations** in the header to open the abbreviation reference table. This shows all ~67 word-to-abbreviation mappings used by the title auto-abbreviation system.
 
 ### Searching
 
@@ -201,7 +223,7 @@ Click **← Back** to return to the main view.
 |------------|-------------|---------|
 | KMZ | Google Earth mapping files | `P3_201210-9_ProjectLimits_2025-01-15.kmz` |
 | FDOT Production Deliverables | Final plan sheet deliverables to FDOT | `20121095201-PLANS-01-ROADWAY.pdf` |
-| FDOT Production Deliverables (Phased) | Phased plan sheet submittals | `20121095201-PLANS-01-ROADWAY-90pct.pdf` |
+| FDOT Production Deliverables (Phased) | Phased plan sheet submittals | `20121095201-PLANS-01-ROADWAY-90.pdf` |
 | Guide Sign Worksheets | Guide sign design worksheets | `20121095201-GuideSignWorksheets.pdf` |
 | Design Submittal | Reports, calcs, memos, analysis packages | `P3-0001.00-PS_PvmtDsgnRpt.pdf` |
 | FPID Document | General project documents by short FPID | `201210-9_TypSectionPkg.pdf` |
@@ -218,3 +240,4 @@ Click **← Back** to return to the main view.
 - **Optional fields.** If a field is marked Optional (amber), leaving it blank is fine — the corresponding segment is simply omitted from the filename.
 - **Copy the pattern.** If the Validator flags a filename as invalid, use the "Copy Pattern" button to get the correct format, then adjust your filename accordingly.
 - **Subtitle separator.** When a subtitle is included, it is separated from the title by a hyphen (`-`), not an underscore.
+- **Keep filenames short.** The base filename (excluding extension) must be 48 characters or fewer. The File Checks section shows the current length in both the Generator and Validator.
