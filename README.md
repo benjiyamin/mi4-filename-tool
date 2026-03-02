@@ -1,6 +1,6 @@
-# MI-4 File Name Tool
+# MI-4 Naming Tool (MINT)
 
-A static web application for generating and validating file names against FDOT (Florida Department of Transportation) MI-4 Program naming conventions.
+A static web application for generating and validating file names against MI-4 Program naming conventions.
 
 **Live demo:** [benjiyamin.github.io/mi4-filename-tool](https://benjiyamin.github.io/mi4-filename-tool/)
 

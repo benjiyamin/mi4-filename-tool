@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-MI-4 File Name Tool is a static, single-page web application for generating and validating file names against FDOT (Florida Department of Transportation) MI-4 Program naming conventions. It supports 9 naming conventions for infrastructure project deliverables including KMZ files, FDOT production deliverables (with and without phase), guide sign worksheets, design submittals, FPID documents (internal and external), permit documents, and program documents.
+MI-4 Naming Tool (MINT) is a static, single-page web application for generating and validating file names against MI-4 Program naming conventions. It supports 9 naming conventions for infrastructure project deliverables including KMZ files, FDOT production deliverables (with and without phase), guide sign worksheets, design submittals, FPID documents (internal and external), permit documents, and program documents.
 
 ## Architecture
 
