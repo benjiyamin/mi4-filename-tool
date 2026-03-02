@@ -192,19 +192,16 @@ const FPIDS = [
 
 // ═══════ SUBMITTAL PHASES ═══════
 const SUBMITTAL_PHASES = [
-  { desc: "Prelim Engineering - Line and Grade", prefix: "", defaultPhase: "15pct" },
-  { desc: "Prelim Engineering - Phase 1", prefix: "", defaultPhase: "30pct" },
-  { desc: "Prelim Engineering - Phase 1A", prefix: "", defaultPhase: "30Apct" },
-  { desc: "Prelim Engineering - Phase 2", prefix: "", defaultPhase: "45pct" },
-  { desc: "Design - Phase Submittal (90%)", prefix: "PS", defaultPhase: "90pct", modifiers: ["30pct", "60pct"] },
+  { desc: "Prelim Engineering - Line and Grade", prefix: "", defaultPhase: "15" },
+  { desc: "Prelim Engineering - Phase 1", prefix: "", defaultPhase: "30" },
+  { desc: "Prelim Engineering - Phase 1A", prefix: "", defaultPhase: "30A" },
+  { desc: "Prelim Engineering - Phase 2", prefix: "", defaultPhase: "45" },
+  { desc: "Design - Phase Submittal (90%)", prefix: "PS", defaultPhase: "90", modifiers: ["15", "30", "45", "60"] },
   { desc: "Design - Final Submittal (100%)", prefix: "FS", defaultPhase: "Final", modifiers: ["RFC"] },
   { desc: "Design - Project Documentation", prefix: "PD", defaultPhase: "-" },
   { desc: "Design - Shop Drawing", prefix: "SD", defaultPhase: "-" },
   { desc: "Design - Contract Submittal", prefix: "CS", defaultPhase: "-" },
   { desc: "Design - Courtesy Review", prefix: "CR", defaultPhase: "-" },
-  { desc: "Design - Field Correction Request", prefix: "FCR", defaultPhase: "-" },
-  { desc: "Design - Request for Information", prefix: "RFI", defaultPhase: "-" },
-  { desc: "Design - Request for Modification", prefix: "RFM", defaultPhase: "-" }
 ];
 
 // ═══════ COMPONENTS ═══════
