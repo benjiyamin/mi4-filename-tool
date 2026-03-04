@@ -658,7 +658,6 @@ function renderGenerator(){
   const hdr=h("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:"8px"}});
   const hdrL=h("div",{style:{display:"flex",alignItems:"center",gap:"8px"}});
   hdrL.append(h("span",{style:{fontSize:"11px",fontWeight:"700",letterSpacing:".07em",textTransform:"uppercase",color:isValid?"#166534":fileIssues?"#991b1b":generatedName?"#92400e":"#94a3b8"}},"Generated File Name"));
-  if(totalCount>0)hdrL.append(h("span",{style:{fontSize:"10px",fontWeight:"600",color:isValid?"#166534":fileIssues?"#991b1b":"#92400e",background:isValid?"#dcfce7":fileIssues?"#fecaca":"#fef3c7",border:"1px solid "+(isValid?"#bbf7d0":fileIssues?"#fca5a5":"#fde68a"),borderRadius:"10px",padding:"1px 8px"}},isValid?"\u2713 Valid":fileIssues?"\u2717 Issues":filledCount+"/"+totalCount));
   const hdrR=h("div",{style:{display:"flex",gap:"6px"}});
   hdrR.append(h("button",{className:"sm-btn",style:{color:"#64748b",background:"transparent",borderColor:"#d1d5db"},onClick:()=>setState({convention:"",title:"",subTitle:"",fpidShort:"",project:"",component:"",submittalPhase:"",phaseMod:"",submittalIdRaw:"",isResubmittal:false,resubmittalIdRaw:"",formattedDate:"",customIdFormat:"",customIdValue:"",externalFpidRaw:"",revisionIdRaw:"",copied:false})},"Reset"));
   if(isValid&&generatedName){
