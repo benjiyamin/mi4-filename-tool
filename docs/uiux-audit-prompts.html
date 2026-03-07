@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MINT — UI/UX Audit Implementation Prompts</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{min-height:100vh;background:linear-gradient(165deg,#0c1222 0%,#162032 40%,#0c1222 100%);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#e2e8f0;padding:32px 16px 64px}
+h1{font-size:22px;font-weight:700;color:#f1f5f9;margin-bottom:4px}
+.subtitle{font-size:13px;color:#64748b;margin-bottom:32px}
+.badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:4px;white-space:nowrap}
+.badge-haiku{color:#0d9488;background:rgba(13,148,136,.12);border:1px solid rgba(13,148,136,.25)}
+.badge-sonnet{color:#818cf8;background:rgba(129,140,248,.12);border:1px solid rgba(129,140,248,.25)}
+table{width:100%;max-width:960px;border-collapse:collapse;background:#1e2d42;border-radius:12px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+thead tr{background:#162032;border-bottom:1px solid rgba(255,255,255,.07)}
+th{padding:12px 16px;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#475569;text-align:left}
+th:last-child{text-align:center;width:130px}
+tbody tr{border-bottom:1px solid rgba(255,255,255,.05);transition:background .15s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:rgba(255,255,255,.03)}
+td{padding:14px 16px;vertical-align:top}
+.task-id{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:#0d9488;white-space:nowrap}
+.task-name{font-size:13px;font-weight:600;color:#f1f5f9;margin-bottom:4px}
+.task-desc{font-size:12px;color:#64748b;line-height:1.5}
+.task-issues{font-size:11px;color:#475569;margin-top:6px}
+.task-issues span{display:inline-block;background:rgba(255,255,255,.05);border-radius:3px;padding:1px 6px;margin:2px 2px 0 0;border:1px solid rgba(255,255,255,.06)}
+.copy-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;font-size:12px;font-weight:600;border-radius:7px;border:none;cursor:pointer;font-family:inherit;transition:all .2s;white-space:nowrap;background:rgba(13,148,136,.15);color:#0d9488;border:1px solid rgba(13,148,136,.25)}
+.copy-btn:hover{background:rgba(13,148,136,.25);border-color:rgba(13,148,136,.4)}
+.copy-btn.copied{background:rgba(22,101,52,.2);color:#4ade80;border-color:rgba(74,222,128,.3)}
+td.center{text-align:center;vertical-align:middle}
+.severity{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;flex-shrink:0}
+.sev-critical{background:#ef4444}
+.sev-high{background:#f97316}
+.sev-medium{background:#eab308}
+.sev-low{background:#3b82f6}
+.header-row{display:flex;align-items:baseline;gap:12px;margin-bottom:6px}
+.prompt-store{display:none}
+</style>
+</head>
+<body>
+
+<h1>MINT — UI/UX Audit Implementation Prompts</h1>
+<p class="subtitle">Each row is a self-contained task for a fresh Claude Code agent. Click Copy to grab the full prompt.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width:70px">Task</th>
+      <th>Description</th>
+      <th style="width:160px">Model</th>
+      <th>Copy Prompt</th>
+    </tr>
+  </thead>
+  <tbody>
+
+    <tr>
+      <td><span class="task-id">A</span></td>
+      <td>
+        <div class="header-row">
+          <span class="task-name">CSS Quick Wins</span>
+          <span class="severity sev-critical" title="Critical"></span>
+          <span class="severity sev-high" title="High"></span>
+        </div>
+        <div class="task-desc">Touch targets (44px min), font size increases for labels/hints, prefers-reduced-motion, pattern legend + segment comparison mobile collapse, iOS safe-area padding, Google Fonts preconnect, and focus-visible ring improvement. CSS changes only.</div>
+        <div class="task-issues">Covers issues: <span>#1 Touch targets</span><span>#2 Font sizes</span><span>#8 Legend grid</span><span>#9 Comparison grid</span><span>#18 Motion</span><span>#24 Focus ring</span><span>#26 Safe area</span><span>#27 Preconnect</span></div>
+      </td>
+      <td><span class="badge badge-haiku">claude-haiku-4-5</span></td>
+      <td class="center"><button class="copy-btn" data-task="A">&#128203; Copy</button></td>
+    </tr>
+
+    <tr>
+      <td><span class="task-id">B</span></td>
+      <td>
+        <div class="header-row">
+          <span class="task-name">Destructive Action Guards</span>
+          <span class="severity sev-critical" title="Critical"></span>
+        </div>
+        <div class="task-desc">Add confirmation dialogs before two irreversible actions: (1) changing the convention (which silently clears all 16 form fields), and (2) clicking Reset. Both are especially dangerous on mobile where mis-taps are common.</div>
+        <div class="task-issues">Covers issues: <span>#3 Convention wipe</span><span>#4 Reset no confirm</span></div>
+      </td>
+      <td><span class="badge badge-haiku">claude-haiku-4-5</span></td>
+      <td class="center"><button class="copy-btn" data-task="B">&#128203; Copy</button></td>
+    </tr>
+
+    <tr>
+      <td><span class="task-id">C</span></td>
+      <td>
+        <div class="header-row">
+          <span class="task-name">ARIA Roles &amp; Label Associations</span>
+          <span class="severity sev-high" title="High"></span>
+        </div>
+        <div class="task-desc">Add ARIA tab pattern to Generator/Validator toggle, aria-expanded to convention cards, aria-live to the output filename box and file checks, and fix label-for-input associations so screen readers can announce field names on focus.</div>
+        <div class="task-issues">Covers issues: <span>#10 ARIA tabs</span><span>#10 aria-live output</span><span>#10 aria-expanded</span><span>#11 Label associations</span></div>
+      </td>
+      <td><span class="badge badge-sonnet">claude-sonnet-4-6</span></td>
+      <td class="center"><button class="copy-btn" data-task="C">&#128203; Copy</button></td>
+    </tr>
+
+    <tr>
+      <td><span class="task-id">D</span></td>
+      <td>
+        <div class="header-row">
+          <span class="task-name">Autocomplete ARIA Combobox</span>
+          <span class="severity sev-high" title="High"></span>
+        </div>
+        <div class="task-desc">Implement the ARIA 1.2 combobox pattern on the title autocomplete field. Adds role=combobox, role=listbox, role=option, aria-activedescendant, and aria-expanded so keyboard and screen-reader users can fully operate it.</div>
+        <div class="task-issues">Covers issues: <span>#10 Autocomplete ARIA</span></div>
+      </td>
+      <td><span class="badge badge-sonnet">claude-sonnet-4-6</span></td>
+      <td class="center"><button class="copy-btn" data-task="D">&#128203; Copy</button></td>
+    </tr>
+
+    <tr>
+      <td><span class="task-id">E</span></td>
+      <td>
+        <div class="header-row">
+          <span class="task-name">Sticky Tab Navigation (Mobile)</span>
+          <span class="severity sev-high" title="High"></span>
+        </div>
+        <div class="task-desc">Make the Generator/Validator toggle stick to the top of the viewport on mobile only (≤480px), using position:sticky and a backdrop-filter blur. On desktop the toggle continues to scroll normally. Requires wrapping the toggle in a new div.</div>
+        <div class="task-issues">Covers issues: <span>#5 No sticky nav</span></div>
+      </td>
+      <td><span class="badge badge-sonnet">claude-sonnet-4-6</span></td>
+      <td class="center"><button class="copy-btn" data-task="E">&#128203; Copy</button></td>
+    </tr>
+
+    <tr>
+      <td><span class="task-id">F</span></td>
+      <td>
+        <div class="header-row">
+          <span class="task-name">Autocomplete Upward Flip</span>
+          <span class="severity sev-high" title="High"></span>
+        </div>
+        <div class="task-desc">The title autocomplete dropdown always opens downward, clipping under the mobile keyboard when the field is low on screen. After each render(), measure the dropdown's position and flip it upward if it would extend below the visible viewport.</div>
+        <div class="task-issues">Covers issues: <span>#6 Autocomplete clip</span></div>
+      </td>
+      <td><span class="badge badge-sonnet">claude-sonnet-4-6</span></td>
+      <td class="center"><button class="copy-btn" data-task="F">&#128203; Copy</button></td>
+    </tr>
+
+    <tr>
+      <td><span class="task-id">G</span></td>
+      <td>
+        <div class="header-row">
+          <span class="task-name">Scroll to Result + Copy UX</span>
+          <span class="severity sev-medium" title="Medium"></span>
+        </div>
+        <div class="task-desc">Three small JS changes: (1) auto-scroll to the output filename box when all required fields become complete, (2) remove the redundant click-to-copy on the text box so the Copy button is the single affordance, and (3) shorten the "Copied" feedback from 1800ms to 1200ms.</div>
+        <div class="task-issues">Covers issues: <span>#13 Dual copy</span><span>#14 No scroll-to-result</span><span>#21 Copy timeout</span></div>
+      </td>
+      <td><span class="badge badge-haiku">claude-haiku-4-5</span></td>
+      <td class="center"><button class="copy-btn" data-task="G">&#128203; Copy</button></td>
+    </tr>
+
+    <tr>
+      <td><span class="task-id">H</span></td>
+      <td>
+        <div class="header-row">
+          <span class="task-name">Color-Only Status Indicators</span>
+          <span class="severity sev-high" title="High"></span>
+        </div>
+        <div class="task-desc">The Generator output section relies solely on background gradient color to communicate state (ready/partial/error). Add text status badges ("Ready", "Incomplete", "File Issue") so users with color vision deficiency get the same information. Also verify the Validator's pass/fail icons are sufficiently prominent. WCAG 1.4.1.</div>
+        <div class="task-issues">Covers issues: <span>#7 Color-only status</span></div>
+      </td>
+      <td><span class="badge badge-sonnet">claude-sonnet-4-6</span></td>
+      <td class="center"><button class="copy-btn" data-task="H">&#128203; Copy</button></td>
+    </tr>
+
+  </tbody>
+</table>
+
+<!-- Severity legend -->
+<div style="margin-top:20px;display:flex;align-items:center;gap:16px;font-size:11px;color:#475569;max-width:960px">
+  <span>Severity:</span>
+  <span><span class="severity sev-critical" style="display:inline-block"></span>Critical</span>
+  <span><span class="severity sev-high" style="display:inline-block"></span>High</span>
+  <span><span class="severity sev-medium" style="display:inline-block"></span>Medium</span>
+  <span><span class="severity sev-low" style="display:inline-block"></span>Low</span>
+</div>
+
+<!-- Hidden prompt store -->
+<div class="prompt-store" id="prompts"></div>
+
+<script>
+const PROMPTS = {
+
+A: `## Codebase context
+MI-4 Naming Tool (MINT) — zero-dependency vanilla JavaScript SPA.
+Files: \`index.html\` (embedded CSS in <style> block), \`mi4-data.js\` (data), \`mi4-tool.js\` (logic).
+No build step. App is at \`/home/user/mi4-filename-tool/\`.
+All CSS lives in the <style> block in index.html. There is one existing breakpoint: \`@media(max-width:480px)\`.
+Work on branch \`claude/audit-uiux-mobile-XNPw8\`. Commit and push when done.
+
+## Task
+Make the following CSS-only fixes to \`index.html\`. Do NOT touch \`mi4-tool.js\` or \`mi4-data.js\`.
+
+### 1. Touch targets — minimum 44px height on all interactive controls
+- \`.nav-link\`: add \`padding: 10px 8px; min-height: 44px; display: inline-flex; align-items: center\`
+- \`.back-link\`: add \`min-height: 44px\` and increase padding to \`10px 0\`
+- \`.sm-btn\` (desktop base): change from \`padding: 4px 10px\` to \`padding: 8px 14px; min-height: 36px\`
+  — the mobile override already bumps to 44px so just close the gap on desktop
+- \`.toggle-btn\`: already 40px+ on desktop, ensure mobile override keeps \`min-height: 44px\`
+
+### 2. Font sizes — increase small text for readability
+- \`.lbl-text\`: 11px → 12px
+- \`.info-card .example\`: 11px → 12px
+- \`.field-type-badge\`: 9px → 11px
+- \`.legend-example\`: 10px → 11px
+- \`.autocomplete-item\`: 13px → 14px
+- \`.pattern-visual\`: 12px → 13px
+
+### 3. prefers-reduced-motion
+Add the following media query block inside the <style> tag:
+\`\`\`css
+@media(prefers-reduced-motion:reduce){
+  .fade-in{animation:none}
+  .pattern-segment{transition:none}
+  .pattern-segment:hover{transform:none}
+  .field-tag{transition:none}
+  .inp{transition:none}
+  .output-box{transition:none}
+  .sm-btn{transition:none}
+  .toggle-btn{transition:none}
+}
+\`\`\`
+
+### 4. Pattern legend — collapse to 2 columns on mobile
+Inside \`@media(max-width:480px)\`, add:
+\`.pattern-legend-row{grid-template-columns:12px 1fr;gap:6px}\`
+\`.field-type-badge{display:none}\` (hide badge on mobile to save space — legend still shows color dot and description)
+
+### 5. Segment comparison — collapse to single column on mobile
+The Validator comparison section is rendered inline with \`display:grid;grid-template-columns:1fr 1fr\` style. Add a utility class \`.compare-grid\` to the <style> block:
+\`.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}\`
+Then inside \`@media(max-width:480px)\`: \`.compare-grid{grid-template-columns:1fr}\`
+NOTE: You will need to verify how the comparison section is rendered in mi4-tool.js (search for "Entered" or "Expected Pattern" or "compare") and add \`className:"compare-grid"\` to that container element if it uses an inline style grid. This is the only JS touch allowed for this task.
+
+### 6. Safe area inset padding for iOS
+Change \`body\` padding from \`padding:24px 16px 60px\` to:
+\`padding:24px 16px calc(60px + env(safe-area-inset-bottom,0px))\`
+
+### 7. Google Fonts preconnect
+Add these two lines immediately before the existing <link> for Google Fonts:
+\`\`\`html
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+\`\`\`
+
+### 8. Improve focus-visible ring
+Change \`.inp:focus{border-color:#0d9488}\` to also add a visible focus shadow:
+\`.inp:focus{border-color:#0d9488;box-shadow:0 0 0 3px rgba(13,148,136,.2);outline:none}\`
+
+## Verification
+Open \`index.html\` in a browser. Use browser DevTools to:
+1. Toggle device emulation to iPhone SE (375px) — confirm all buttons are easily tappable
+2. Check that label text is readable without zooming
+3. Simulate \`prefers-reduced-motion\` in DevTools → Rendering panel — confirm animations stop
+4. Confirm Google Fonts preconnect links appear in the <head>`,
+
+B: `## Codebase context
+MI-4 Naming Tool (MINT) — zero-dependency vanilla JavaScript SPA.
+Files: \`index.html\` (CSS), \`mi4-data.js\` (data), \`mi4-tool.js\` (all logic).
+No build step. App is at \`/home/user/mi4-filename-tool/\`.
+Custom hyperscript: \`h(tag, attrs, ...children)\` creates real DOM. Never use innerHTML.
+\`setState(patch)\` merges patch into global state and calls \`render()\` (full DOM rebuild).
+Code style: compact, minified — single-line functions, minimal whitespace.
+Work on branch \`claude/audit-uiux-mobile-XNPw8\`. Commit and push when done.
+
+## Task
+Make two targeted behavior changes in \`mi4-tool.js\`. Do not change CSS or data files.
+
+### 1. Convention change — warn before wiping state
+In the Generator's convention <select> onChange handler (search for \`setState({convention:\` to find it), the current code immediately resets all form fields when convention changes.
+
+Change this so that:
+- If any form field is currently filled (check: title, fpidShort, project, component, submittalPhase, submittalIdRaw, formattedDate — any non-empty string), show a \`window.confirm()\` dialog: "Changing the convention will clear all form fields. Continue?"
+- If the user cancels, do NOT change the convention (return early)
+- If the user confirms (or no fields are filled), proceed with the existing reset logic
+
+### 2. Reset button — require confirmation
+Find the Reset button in the Generator output section (search for "Reset" button text). Add a \`window.confirm('Reset all fields?')\` check before calling setState to clear state. Only reset if user confirms.
+
+## Verification
+1. Open the Generator tab, select a convention, fill in several fields
+2. Change the convention → confirm dialog appears → cancel → fields preserved, convention unchanged
+3. Change the convention → confirm → fields cleared, convention changes
+4. Click Reset → confirm dialog → cancel → fields preserved
+5. Click Reset → confirm → all fields cleared`,
+
+C: `## Codebase context
+MI-4 Naming Tool (MINT) — zero-dependency vanilla JavaScript SPA.
+Files: \`index.html\` (CSS), \`mi4-data.js\` (data), \`mi4-tool.js\` (all logic).
+No build step. App is at \`/home/user/mi4-filename-tool/\`.
+Custom hyperscript: \`h(tag, attrs, ...children)\` creates real DOM. Never use innerHTML.
+All interactive elements are built with the h() function. Attributes starting with \`on\` become event listeners. Other attributes use setAttribute().
+\`setState(patch)\` merges patch into global state and calls \`render()\` (full DOM rebuild).
+Code style: compact, minified — single-line functions, minimal whitespace.
+Work on branch \`claude/audit-uiux-mobile-XNPw8\`. Commit and push when done.
+
+## Task
+Add ARIA semantics and fix label associations in \`mi4-tool.js\`. Read the full file before making changes.
+
+### 1. Generator/Validator tab toggle — ARIA tab pattern
+Find the toggle-wrap div that contains the Generator and Validator buttons (search for \`toggle-wrap\`).
+- Add \`role:"tablist"\` and \`aria-label:"Tool mode"\` to the wrapper element
+- Add \`role:"tab"\` to each button
+- Add \`aria-selected: state.mode === "generator"\` (true/false) to the Generator button
+- Add \`aria-selected: state.mode === "validator"\` to the Validator button
+- Add \`id:"tab-generator"\` and \`id:"tab-validator"\` to the buttons
+- Add \`aria-controls:"panel-generator"\` / \`aria-controls:"panel-validator"\` to the buttons
+- Add \`id:"panel-generator"\` or \`id:"panel-validator"\` and \`role:"tabpanel"\` and \`aria-labelledby:"tab-generator"\` (or validator) to the card container that wraps the active panel
+
+### 2. Expandable convention cards — aria-expanded
+In \`renderConventions()\`, each convention has a clickable button that expands/collapses the card.
+- Add \`aria-expanded: state.convExpanded === conv.id\` to each expand/collapse button
+- Add a unique \`id\` to each expanded content section (e.g., \`id:"conv-panel-" + conv.id\`)
+- Add \`aria-controls:"conv-panel-" + conv.id\` to the button
+
+### 3. aria-live on generated filename output
+In \`renderGenerator()\`, find the output box element (search for \`output-box\` class).
+- The wrapper div around the output box should have \`aria-live:"polite"\` and \`aria-atomic:"true"\`
+- This ensures screen readers announce the filename when it changes
+
+### 4. aria-live on file check results
+In \`renderFileChecks()\`, add \`role:"status"\` to the outermost container element it returns.
+
+### 5. Label-for-input associations
+Find the three field component functions: \`selectEl()\`, \`inputEl()\`, and \`autocompleteEl()\`.
+Each currently renders a label span and an input as siblings without a programmatic link.
+
+For each function:
+- Generate a unique \`id\` for the input using the field's label or a passed \`id\` parameter (e.g., slugify the label: \`label.toLowerCase().replace(/\\s+/g,'-')\`)
+- Add \`htmlFor\` attribute (which h() should map to \`for\` via setAttribute) to the <label> element — OR wrap the input inside the label element as a child
+- Add the matching \`id\` attribute to the <input> or <select> element
+- Ensure the hint span (lbl-hint) is linked via \`aria-describedby\` if present
+
+Note: The h() function uses \`setAttribute()\` for unknown attributes — verify that \`for\` works, or use a workaround like setting \`el.htmlFor = value\` by adding a special case in h() similar to how \`className\` is handled.
+
+## Verification
+1. Open in browser, tab through the form with keyboard — each input should be announced with its label
+2. Use browser accessibility inspector (Chrome DevTools → Accessibility tab) to verify:
+   - Tab toggle shows role=tablist with tab children
+   - Active tab has aria-selected=true
+   - Convention expand buttons show aria-expanded=true/false
+   - Output box wrapper has aria-live=polite
+3. Click a field label text — focus should move to the input`,
+
+D: `## Codebase context
+MI-4 Naming Tool (MINT) — zero-dependency vanilla JavaScript SPA.
+Files: \`index.html\` (CSS), \`mi4-data.js\` (data), \`mi4-tool.js\` (all logic).
+No build step. App is at \`/home/user/mi4-filename-tool/\`.
+Custom hyperscript: \`h(tag, attrs, ...children)\` creates real DOM. Never use innerHTML.
+\`setState(patch)\` merges patch into global state and calls \`render()\` (full DOM rebuild).
+Code style: compact, minified — single-line functions, minimal whitespace.
+Work on branch \`claude/audit-uiux-mobile-XNPw8\`. Commit and push when done.
+
+## Task
+Implement the ARIA combobox pattern on \`autocompleteEl()\` in \`mi4-tool.js\`. Read the full function before making changes.
+
+The autocomplete input currently supports keyboard navigation (ArrowUp/Down/Enter/Escape) and a dropdown list, but has no ARIA semantics. Screen readers cannot use it.
+
+Apply the ARIA 1.2 combobox pattern:
+
+### On the input element, add:
+- \`role: "combobox"\`
+- \`aria-autocomplete: "list"\`
+- \`aria-expanded: state.acFocused && filteredSuggestions.length > 0\` (true/false string)
+- \`aria-haspopup: "listbox"\`
+- \`aria-controls: "ac-listbox"\` (matches the dropdown id below)
+- \`aria-activedescendant\`: when \`state.acHighlightIdx >= 0\`, set to \`"ac-item-" + state.acHighlightIdx\`, otherwise \`""\`
+
+### On the dropdown container div (.autocomplete-drop), add:
+- \`role: "listbox"\`
+- \`id: "ac-listbox"\`
+
+### On each dropdown item div (.autocomplete-item), add:
+- \`role: "option"\`
+- \`id: "ac-item-" + index\`
+- \`aria-selected: index === state.acHighlightIdx\` (true/false string)
+
+### Notes:
+- The filtered suggestions array is computed inside autocompleteEl() — use the local variable directly
+- The \`state.acFocused\` and \`state.acHighlightIdx\` values are already tracked in state
+- Do not change keyboard behavior — only add ARIA attributes
+- Keep the visual behavior identical
+
+## Verification
+1. Open the Generator tab, select any convention with a Title field
+2. Click the title input and start typing — verify screen reader announces matches (use VoiceOver on Mac or NVDA on Windows)
+3. Use Chrome DevTools Accessibility panel — the input should show role=combobox and aria-expanded=true when open
+4. Arrow down through items — aria-activedescendant should update to the highlighted item's id`,
+
+E: `## Codebase context
+MI-4 Naming Tool (MINT) — zero-dependency vanilla JavaScript SPA.
+Files: \`index.html\` (CSS), \`mi4-data.js\` (data), \`mi4-tool.js\` (all logic).
+No build step. App is at \`/home/user/mi4-filename-tool/\`.
+Custom hyperscript: \`h(tag, attrs, ...children)\` creates real DOM. Never use innerHTML.
+\`setState(patch)\` merges patch into global state and calls \`render()\` (full DOM rebuild).
+All CSS is in index.html's <style> block. One breakpoint: \`@media(max-width:480px)\`.
+Code style: compact, minified — single-line functions, minimal whitespace.
+Work on branch \`claude/audit-uiux-mobile-XNPw8\`. Commit and push when done.
+
+## Task
+Make the Generator/Validator tab toggle sticky at the top of the viewport on mobile screens only.
+
+### CSS changes (index.html)
+Add a wrapper class \`.tab-sticky-wrap\` to the <style> block:
+\`\`\`
+.tab-sticky-wrap{}
+@media(max-width:480px){
+  .tab-sticky-wrap{position:sticky;top:0;z-index:100;padding:8px 0 4px}
+  .tab-sticky-wrap{backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+}
+\`\`\`
+
+### JS changes (mi4-tool.js)
+In \`render()\`, find where the \`.toggle-wrap\` element is rendered (search for \`toggle-wrap\`).
+Wrap the existing toggle-wrap element in a new div with \`className:"tab-sticky-wrap"\`.
+That is the only JS change needed.
+
+### Notes:
+- \`position:sticky\` works relative to the scroll container. Since body is the scroll container here, \`top:0\` will stick the toggle at the top of the viewport when scrolling.
+- On desktop (>480px), no sticky behavior — \`.tab-sticky-wrap{}\` has no styles.
+- The toggle is already centered via \`margin-left:auto;margin-right:auto\` on \`.toggle-wrap\`, which will be preserved.
+- The header (title, subtitle, nav links) scrolls away — only the tab toggle sticks.
+
+## Verification
+1. Open in mobile emulation (iPhone 375px width in DevTools)
+2. Select the Design Submittal convention (has 8+ fields) and scroll down
+3. Confirm the Generator/Validator toggle stays pinned at top while scrolling
+4. On desktop (>768px), confirm the toggle scrolls normally with the page`,
+
+F: `## Codebase context
+MI-4 Naming Tool (MINT) — zero-dependency vanilla JavaScript SPA.
+Files: \`index.html\` (CSS), \`mi4-data.js\` (data), \`mi4-tool.js\` (all logic).
+No build step. App is at \`/home/user/mi4-filename-tool/\`.
+Custom hyperscript: \`h(tag, attrs, ...children)\` creates real DOM. Never use innerHTML.
+\`setState(patch)\` merges patch into global state and calls \`render()\` (full DOM rebuild).
+The app's entire DOM is rebuilt on every setState() call.
+Code style: compact, minified — single-line functions, minimal whitespace.
+Work on branch \`claude/audit-uiux-mobile-XNPw8\`. Commit and push when done.
+
+## Task
+Make the autocomplete dropdown flip upward when there isn't enough space below the input.
+
+Read \`autocompleteEl()\` in \`mi4-tool.js\` fully before making changes.
+
+### Approach
+Since the entire DOM is rebuilt on every state change and h() creates real DOM, use a post-render measurement approach.
+
+At the end of the \`render()\` function in the MAIN RENDER section, add a \`requestAnimationFrame()\` callback that:
+1. Queries all \`.autocomplete-drop\` elements
+2. For each one, calls \`getBoundingClientRect()\`
+3. If \`rect.bottom > window.innerHeight - 100\` (not enough space below), switches the dropdown to open upward:
+   - \`drop.style.top = 'auto'\`
+   - \`drop.style.bottom = '100%'\`
+   - \`drop.style.borderRadius = '8px 8px 0 0'\`
+   - \`drop.style.borderTop = '1.5px solid #d1d5db'\`
+   - \`drop.style.borderBottom = 'none'\`
+4. Otherwise leave it as-is (default CSS handles downward opening)
+
+No CSS changes needed — inline style overrides on the element handle the flip.
+
+### Notes
+- The \`.autocomplete-drop\` element is only rendered when \`state.acFocused\` is true and filtered suggestions exist
+- Only one autocomplete exists in the UI at a time (the title field), so querying by class is safe
+- Wrap the measurement in requestAnimationFrame() to ensure paint has occurred
+
+## Verification
+1. Open in mobile emulation (iPhone SE, 375×667px)
+2. Scroll to the bottom of the Generator form so the title field is near the bottom
+3. Click the title field and type a character — confirm the dropdown opens UPWARD
+4. With the title field near the top, click and type — confirm dropdown opens downward`,
+
+G: `## Codebase context
+MI-4 Naming Tool (MINT) — zero-dependency vanilla JavaScript SPA.
+Files: \`index.html\` (CSS), \`mi4-data.js\` (data), \`mi4-tool.js\` (all logic).
+No build step. App is at \`/home/user/mi4-filename-tool/\`.
+Custom hyperscript: \`h(tag, attrs, ...children)\` creates real DOM. Never use innerHTML.
+\`setState(patch)\` merges patch into global state and calls \`render()\` (full DOM rebuild).
+Code style: compact, minified — single-line functions, minimal whitespace.
+Work on branch \`claude/audit-uiux-mobile-XNPw8\`. Commit and push when done.
+
+## Task
+Three small targeted changes in \`mi4-tool.js\`. Read \`renderGenerator()\` fully before changing.
+
+### 1. Remove click-to-copy on the output text box
+In \`renderGenerator()\`, the output box (\`.output-box\`) currently has an onClick handler that copies the filename when the result is valid. This creates two copy targets (the text box AND the Copy button), which is inconsistent.
+- Remove the onClick / style:{cursor:"pointer"} from the output-box element
+- The text box should be read-only display only — the Copy button is the single affordance
+- The output box should always use cursor:"default"
+
+### 2. Scroll to result when filename becomes complete
+Add a scroll behavior at the end of \`render()\` in the MAIN RENDER section, wrapped in requestAnimationFrame():
+\`\`\`js
+const outBox = document.querySelector('.output-box');
+if(outBox) outBox.scrollIntoView({behavior:'smooth', block:'nearest'});
+\`\`\`
+Only trigger this when the state transitions from incomplete to complete. Track with a module-level variable \`let _lastComplete = false\`. Set it to true when complete (all required fields filled, no file issues), false when not. Only call scrollIntoView when _lastComplete changes from false to true.
+
+### 3. Reduce copy timeout from 1800ms to 1200ms
+Search for \`1800\` in mi4-tool.js. Change both occurrences (one for \`copied\`, one for \`patternCopied\`) from \`1800\` to \`1200\`.
+
+## Verification
+1. In Generator: select a convention, fill all fields → output box scrolls into view automatically
+2. Make a change that breaks completeness, then re-complete → scrolls again
+3. Verify the output text box is no longer clickable (no pointer cursor, no copy on click)
+4. Click Copy button → "✓ Copied" appears and reverts after ~1.2 seconds (not 1.8)`,
+
+H: `## Codebase context
+MI-4 Naming Tool (MINT) — zero-dependency vanilla JavaScript SPA.
+Files: \`index.html\` (CSS), \`mi4-data.js\` (data), \`mi4-tool.js\` (all logic).
+No build step. App is at \`/home/user/mi4-filename-tool/\`.
+Custom hyperscript: \`h(tag, attrs, ...children)\` creates real DOM. Never use innerHTML.
+\`setState(patch)\` merges patch into global state and calls \`render()\` (full DOM rebuild).
+Code style: compact, minified — single-line functions, minimal whitespace.
+Work on branch \`claude/audit-uiux-mobile-XNPw8\`. Commit and push when done.
+
+## Task
+Add non-color status indicators to the Generator output section and the Validator status banner.
+Read \`renderGenerator()\` and \`renderValidator()\` in \`mi4-tool.js\` fully before making changes.
+
+### 1. Generator output section — add status badge
+The output section header shows "Generated File Name" with only background color communicating state.
+Add a small status badge inline with the label:
+- All required fields filled, no file issues → "✓ Ready" (green)
+- Has file issues (length/special chars) → "⚠ File Issue" (red)
+- Missing required fields but some filled → "Incomplete" (amber)
+- Nothing filled → no badge
+
+Add CSS classes to \`index.html\`:
+\`.status-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;letter-spacing:.04em;text-transform:uppercase;margin-left:8px}\`
+\`.status-badge.ready{color:#166534;background:rgba(22,101,52,.1);border:1px solid rgba(22,101,52,.2)}\`
+\`.status-badge.issue{color:#991b1b;background:rgba(153,27,27,.1);border:1px solid rgba(153,27,27,.2)}\`
+\`.status-badge.partial{color:#92400e;background:rgba(146,64,14,.1);border:1px solid rgba(146,64,14,.2)}\`
+
+### 2. Validator status banner — verify icon prominence
+The Validator status banner uses ✓/✗ icons. Verify:
+- The icon is at least 20px font-size
+- The "Valid File Name" / "Invalid File Name" text is font-weight 600+
+Adjust only if these do not already meet the threshold.
+
+## Verification
+1. Open Generator, select a convention but fill nothing → no badge
+2. Fill some but not all required fields → "Incomplete" amber badge
+3. Fill all required fields → "✓ Ready" green badge
+4. Generate a filename that is too long → "⚠ File Issue" red badge
+5. In DevTools → Rendering → Emulate vision deficiency → Achromatopsia (grayscale) — status must still be clearly readable from text/icon alone`
+
+};
+
+document.querySelectorAll('.copy-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const task = btn.dataset.task;
+    const text = PROMPTS[task];
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      btn.textContent = '✓ Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.innerHTML = '&#128203; Copy';
+        btn.classList.remove('copied');
+      }, 1500);
+    } catch {
+      // Fallback for non-HTTPS
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      btn.textContent = '✓ Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.innerHTML = '&#128203; Copy';
+        btn.classList.remove('copied');
+      }, 1500);
+    }
+  });
+});
+</script>
+</body>
+</html>
